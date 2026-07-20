@@ -1,0 +1,3104 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GOF - Dashboard PCT (Production Cycle Time)</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js">
+    </script>
+    <style>
+        /* ===== RESET & GLOBAL ===== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f1f5f9;
+            color: #0f172a;
+        }
+
+        /* ===== SIDEBAR ===== */
+        .sidebar {
+            background: #0f172a;
+            height: 100vh;
+            width: 220px;
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 50;
+            padding: 1.5rem 0.75rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.15rem;
+            box-shadow: 4px 0 12px rgba(0, 0, 0, 0.3);
+            overflow-y: auto;
+        }
+        .sidebar::-webkit-scrollbar {
+            width: 3px;
+        }
+        .sidebar::-webkit-scrollbar-track {
+            background: #1e293b;
+        }
+        .sidebar::-webkit-scrollbar-thumb {
+            background: #475569;
+            border-radius: 4px;
+        }
+        .sidebar .logo {
+            color: #f8fafc;
+            font-weight: 700;
+            font-size: 1.1rem;
+            padding: 0 0.5rem 1.2rem 0.5rem;
+            border-bottom: 1px solid #334155;
+            margin-bottom: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            flex-shrink: 0;
+        }
+        .sidebar .logo span {
+            background: #3b82f6;
+            padding: 0.1rem 0.5rem;
+            border-radius: 999px;
+            font-size: 0.6rem;
+            color: white;
+        }
+        .nav-group-label {
+            color: #64748b;
+            font-size: 0.6rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding: 0.6rem 0.75rem 0.2rem;
+            font-weight: 600;
+            flex-shrink: 0;
+        }
+        .nav-btn {
+            background: transparent;
+            border: none;
+            color: #94a3b8;
+            padding: 0.55rem 0.75rem;
+            border-radius: 8px;
+            font-weight: 500;
+            font-size: 0.82rem;
+            cursor: pointer;
+            transition: all 0.15s;
+            text-align: left;
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            width: 100%;
+            flex-shrink: 0;
+        }
+        .nav-btn:hover {
+            background: #1e293b;
+            color: #e2e8f0;
+        }
+        .nav-btn.active {
+            background: #1e293b;
+            color: #60a5fa;
+            box-shadow: inset 3px 0 0 #3b82f6;
+        }
+        .nav-btn .icon {
+            font-size: 1rem;
+            width: 1.4rem;
+            text-align: center;
+        }
+
+        /* ===== MAIN ===== */
+        .main {
+            margin-left: 220px;
+            padding: 1.2rem 1.8rem 2.5rem;
+        }
+
+        /* ===== CARDS ===== */
+        .card {
+            background: white;
+            border-radius: 14px;
+            padding: 1.2rem 1.5rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+            border: 1px solid #e9edf2;
+        }
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.8rem;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+        .card-header h3 {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: #0f172a;
+        }
+        .card-header .badge {
+            font-size: 0.65rem;
+            color: #64748b;
+            background: #f1f5f9;
+            padding: 0.15rem 0.7rem;
+            border-radius: 999px;
+        }
+        .card-header .badge strong {
+            color: #0f172a;
+        }
+
+        /* ===== BADGES ===== */
+        .badge-status {
+            padding: 0.15rem 0.6rem;
+            border-radius: 999px;
+            font-size: 0.65rem;
+            font-weight: 600;
+            display: inline-block;
+        }
+        .badge-ppic {
+            background: #e2e8f0;
+            color: #475569;
+        }
+        .badge-logistic {
+            background: #fef9c3;
+            color: #854d0e;
+        }
+        .badge-produksi {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+        .badge-qc {
+            background: #d1fae5;
+            color: #065f46;
+        }
+        .badge-qa {
+            background: #ede9fe;
+            color: #5b21b6;
+        }
+        .badge-done {
+            background: #bbf7d0;
+            color: #166534;
+        }
+        .badge-kanban-request {
+            background: #fef9c3;
+            color: #854d0e;
+        }
+        .badge-kanban-ready {
+            background: #bbf7d0;
+            color: #166534;
+        }
+        .badge-kanban-problem {
+            background: #fecaca;
+            color: #991b1b;
+        }
+        .badge-type {
+            padding: 0.1rem 0.5rem;
+            border-radius: 999px;
+            font-size: 0.6rem;
+            font-weight: 600;
+        }
+        .badge-wadah {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+        .badge-kemas {
+            background: #fce7f3;
+            color: #9d174d;
+        }
+        .varian-badge {
+            font-size: 0.6rem;
+            padding: 0.1rem 0.5rem;
+            border-radius: 999px;
+            font-weight: 600;
+        }
+        .varian-injeksi {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+        .varian-oral {
+            background: #fce7f3;
+            color: #9d174d;
+        }
+
+        /* ===== SCORE CARD ===== */
+        .score-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+        .score-card-line {
+            background: #f8fafc;
+            border-radius: 12px;
+            padding: 1rem 1.2rem;
+            border: 1px solid #e9edf2;
+            position: relative;
+        }
+        .score-card-line .line-title {
+            font-size: 0.7rem;
+            font-weight: 700;
+            color: #475569;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+        .score-card-line .line-value {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #0f172a;
+            margin: 0.1rem 0;
+        }
+        .score-card-line .line-target {
+            font-size: 0.7rem;
+            color: #64748b;
+        }
+        .score-card-line .line-target .ok {
+            color: #22c55e;
+            font-weight: 700;
+        }
+        .score-card-line .line-target .not-ok {
+            color: #ef4444;
+            font-weight: 700;
+        }
+        .score-card-line .line-sub {
+            font-size: 0.65rem;
+            color: #94a3b8;
+            margin-top: 0.2rem;
+        }
+        .score-card-line .status-big {
+            position: absolute;
+            top: 0.8rem;
+            right: 1.2rem;
+            font-size: 1.6rem;
+        }
+
+        /* ===== TIMELINE STAGE ===== */
+        .timeline-container {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+        }
+        .timeline-row {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.3rem 0.5rem;
+            border-radius: 6px;
+            background: #f8fafc;
+            cursor: pointer;
+            transition: background 0.2s;
+            position: relative;
+        }
+        .timeline-row:hover {
+            background: #f1f5f9;
+        }
+        .timeline-row .batch-info {
+            min-width: 120px;
+            font-weight: 600;
+            font-size: 0.75rem;
+        }
+        .timeline-row .batch-info .varian {
+            font-weight: 400;
+            font-size: 0.6rem;
+            color: #64748b;
+        }
+        .timeline-stages {
+            display: flex;
+            flex: 1;
+            gap: 0.15rem;
+        }
+        .stage-dot {
+            flex: 1;
+            height: 28px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.55rem;
+            font-weight: 600;
+            transition: all 0.2s;
+            position: relative;
+            color: #64748b;
+        }
+        .stage-dot.done {
+            background: #22c55e;
+            color: white;
+        }
+        .stage-dot.active {
+            background: #ef4444;
+            color: white;
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+        .stage-dot.pending {
+            background: #e2e8f0;
+            color: #94a3b8;
+        }
+        .stage-dot .stage-label {
+            display: none;
+        }
+        .stage-dot:hover .stage-label {
+            display: block;
+            position: absolute;
+            bottom: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #0f172a;
+            color: white;
+            padding: 0.1rem 0.4rem;
+            border-radius: 4px;
+            font-size: 0.5rem;
+            white-space: nowrap;
+            z-index: 10;
+        }
+        .stage-dot .tooltip-text {
+            display: none;
+            position: absolute;
+            bottom: -35px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #0f172a;
+            color: white;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.5rem;
+            white-space: nowrap;
+            z-index: 10;
+            max-width: 200px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .stage-dot:hover .tooltip-text {
+            display: block;
+        }
+        .stage-dot .problem-icon {
+            font-size: 0.6rem;
+        }
+
+        @keyframes pulse {
+            0%,
+            100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.6;
+            }
+        }
+
+        /* ===== TOOLTIP CUSTOM ===== */
+        .tooltip-custom {
+            position: relative;
+        }
+        .tooltip-custom:hover .tooltip-content {
+            display: block;
+        }
+        .tooltip-content {
+            display: none;
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #0f172a;
+            color: white;
+            padding: 0.3rem 0.6rem;
+            border-radius: 4px;
+            font-size: 0.6rem;
+            white-space: nowrap;
+            z-index: 20;
+            margin-bottom: 4px;
+        }
+        .tooltip-content::after {
+            content: '';
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            border: 4px solid transparent;
+            border-top-color: #0f172a;
+        }
+
+        /* ===== TABLE ===== */
+        .table-wrap {
+            overflow-x: auto;
+        }
+        .table-wrap table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.7rem;
+            min-width: 900px;
+        }
+        .table-wrap th {
+            text-align: center;
+            padding: 0.4rem 0.25rem;
+            font-weight: 600;
+            color: #475569;
+            border-bottom: 2px solid #e2e8f0;
+            white-space: nowrap;
+            font-size: 0.6rem;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            background: #f8fafc;
+            position: sticky;
+            top: 0;
+        }
+        .table-wrap td {
+            padding: 0.3rem 0.25rem;
+            border-bottom: 1px solid #f1f5f9;
+            text-align: center;
+            vertical-align: middle;
+            font-size: 0.65rem;
+        }
+        .table-wrap td:first-child {
+            text-align: left;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+        .table-wrap td:nth-child(2) {
+            text-align: left;
+        }
+
+        .cell-ok {
+            color: #22c55e;
+            font-weight: 700;
+            background: #f0fdf4;
+            border-radius: 3px;
+            padding: 0.05rem 0.3rem;
+            display: inline-block;
+        }
+        .cell-not-ok {
+            color: #ef4444;
+            font-weight: 700;
+            background: #fef2f2;
+            border-radius: 3px;
+            padding: 0.05rem 0.3rem;
+            display: inline-block;
+        }
+        .cell-na {
+            color: #94a3b8;
+        }
+
+        /* ===== FILTER BAR ===== */
+        .filter-bar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            align-items: center;
+            background: #f8fafc;
+            padding: 0.5rem 1rem;
+            border-radius: 10px;
+            margin-bottom: 1.2rem;
+            border: 1px solid #e9edf2;
+        }
+        .filter-bar .filter-label {
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: #475569;
+        }
+        .filter-bar .filter-value {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #0f172a;
+            background: white;
+            padding: 0.15rem 0.7rem;
+            border-radius: 999px;
+            border: 1px solid #e2e8f0;
+        }
+        .filter-bar .filter-badge {
+            font-size: 0.65rem;
+            color: #64748b;
+            background: white;
+            padding: 0.15rem 0.7rem;
+            border-radius: 999px;
+            border: 1px solid #e2e8f0;
+        }
+        .filter-bar .filter-badge strong {
+            color: #0f172a;
+        }
+
+        /* ===== ON GOING ===== */
+        .ongoing-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 0.6rem;
+        }
+        .ongoing-card {
+            background: #f8fafc;
+            border-radius: 10px;
+            padding: 0.6rem 0.8rem;
+            border-left: 4px solid #3b82f6;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 0.3rem;
+        }
+        .ongoing-card .batch {
+            font-weight: 700;
+            font-size: 0.8rem;
+            color: #0f172a;
+        }
+        .ongoing-card .pct {
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: #3b82f6;
+        }
+        .ongoing-card .status {
+            font-size: 0.65rem;
+            color: #475569;
+            background: #e2e8f0;
+            padding: 0.05rem 0.4rem;
+            border-radius: 999px;
+        }
+        .ongoing-card .target {
+            font-size: 0.6rem;
+            color: #64748b;
+        }
+        .ongoing-card.warning {
+            border-left-color: #ef4444;
+        }
+        .ongoing-card.success {
+            border-left-color: #22c55e;
+        }
+
+        /* ===== CHARTS ===== */
+        .chart-wrapper {
+            position: relative;
+            height: 180px;
+            width: 100%;
+        }
+        .grid-charts {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.2rem;
+        }
+
+        /* ===== FORM & INPUT ===== */
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.2rem;
+        }
+        .form-group label {
+            font-size: 0.65rem;
+            font-weight: 600;
+            color: #475569;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+        .form-row {
+            display: flex;
+            gap: 0.4rem;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .input-text {
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            padding: 0.3rem 0.6rem;
+            font-size: 0.8rem;
+        }
+        .input-text:focus {
+            outline: 1px solid #3b82f6;
+            border-color: #3b82f6;
+        }
+        .input-text:disabled {
+            background: #f1f5f9;
+            color: #94a3b8;
+            cursor: not-allowed;
+        }
+        .input-date {
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            padding: 0.25rem 0.5rem;
+            font-size: 0.75rem;
+            width: 120px;
+        }
+        .input-date:focus {
+            outline: 1px solid #3b82f6;
+            border-color: #3b82f6;
+        }
+        .input-time {
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            padding: 0.25rem 0.5rem;
+            font-size: 0.75rem;
+            width: 80px;
+        }
+        .input-time:focus {
+            outline: 1px solid #3b82f6;
+            border-color: #3b82f6;
+        }
+        .input-select {
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            padding: 0.3rem 0.6rem;
+            font-size: 0.8rem;
+            min-width: 160px;
+        }
+        .input-select:focus {
+            outline: 1px solid #3b82f6;
+            border-color: #3b82f6;
+        }
+
+        .btn {
+            border: none;
+            border-radius: 999px;
+            font-weight: 600;
+            font-size: 0.7rem;
+            padding: 0.3rem 1.2rem;
+            cursor: pointer;
+            transition: 0.1s;
+        }
+        .btn:hover {
+            opacity: 0.85;
+        }
+        .btn-primary {
+            background: #0f172a;
+            color: white;
+        }
+        .btn-primary:hover {
+            background: #1e293b;
+        }
+        .btn-blue {
+            background: #3b82f6;
+            color: white;
+        }
+        .btn-blue:hover {
+            background: #2563eb;
+        }
+        .btn-green {
+            background: #22c55e;
+            color: white;
+        }
+        .btn-green:hover {
+            background: #16a34a;
+        }
+        .btn-red {
+            background: #ef4444;
+            color: white;
+        }
+        .btn-red:hover {
+            background: #dc2626;
+        }
+        .btn-gray {
+            background: #94a3b8;
+            color: white;
+        }
+        .btn-gray:hover {
+            background: #64748b;
+        }
+        .btn-sm {
+            padding: 0.15rem 0.7rem;
+            font-size: 0.6rem;
+        }
+        .btn-xs {
+            padding: 0.1rem 0.4rem;
+            font-size: 0.55rem;
+        }
+
+        /* ===== STEP BOX (Detail Stage) ===== */
+        .step-box {
+            border-left: 3px solid #e2e8f0;
+            padding-left: 0.8rem;
+            margin-bottom: 0.6rem;
+        }
+        .step-box.done {
+            border-left-color: #22c55e;
+        }
+        .step-box.active {
+            border-left-color: #3b82f6;
+        }
+        .step-box.problem {
+            border-left-color: #ef4444;
+        }
+
+        .step-status-badge {
+            font-size: 0.65rem;
+            padding: 0.05rem 0.4rem;
+            border-radius: 999px;
+            display: inline-block;
+        }
+        .step-status-belum {
+            background: #e2e8f0;
+            color: #475569;
+        }
+        .step-status-progress {
+            background: #fef9c3;
+            color: #854d0e;
+        }
+        .step-status-done {
+            background: #bbf7d0;
+            color: #166534;
+        }
+        .step-status-problem {
+            background: #fecaca;
+            color: #991b1b;
+        }
+
+        /* ===== KANBAN ===== */
+        .kanban-card {
+            background: #f8fafc;
+            border-radius: 10px;
+            padding: 0.7rem 1rem;
+            border: 1px solid #e2e8f0;
+            margin-bottom: 0.6rem;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.5rem;
+        }
+        .kanban-card .kanban-info {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.8rem;
+            align-items: center;
+        }
+        .kanban-card .kanban-info .label {
+            font-size: 0.6rem;
+            color: #94a3b8;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        .kanban-card .kanban-info .value {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #0f172a;
+        }
+        .kanban-card .kanban-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.4rem;
+            align-items: center;
+        }
+        .kanban-card .kanban-notes {
+            font-size: 0.65rem;
+            color: #dc2626;
+            margin-top: 0.2rem;
+            width: 100%;
+        }
+        .kanban-card .kanban-notes.ready {
+            color: #16a34a;
+        }
+
+        .request-form {
+            background: #f1f5f9;
+            border-radius: 10px;
+            padding: 0.8rem 1rem;
+            margin-bottom: 1.2rem;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            align-items: flex-end;
+        }
+
+        .detail-container {
+            margin-top: 0.8rem;
+            border-top: 1px solid #e2e8f0;
+            padding-top: 0.8rem;
+        }
+        .empty-state {
+            color: #94a3b8;
+            font-size: 0.8rem;
+            padding: 1rem 0;
+            text-align: center;
+        }
+
+        .tab-group {
+            display: flex;
+            gap: 0.3rem;
+            background: #f1f5f9;
+            padding: 0.2rem;
+            border-radius: 10px;
+            width: fit-content;
+            margin-bottom: 1rem;
+        }
+        .tab-btn {
+            padding: 0.35rem 1.2rem;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.75rem;
+            cursor: pointer;
+            background: transparent;
+            color: #475569;
+            transition: all 0.15s;
+        }
+        .tab-btn.active {
+            background: white;
+            color: #0f172a;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+        }
+
+        .flex-wrap {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            align-items: center;
+        }
+        .gap-1 {
+            gap: 0.3rem;
+        }
+        .gap-2 {
+            gap: 0.5rem;
+        }
+        .gap-3 {
+            gap: 0.75rem;
+        }
+        .mb-1 {
+            margin-bottom: 0.3rem;
+        }
+        .mb-2 {
+            margin-bottom: 0.5rem;
+        }
+        .mb-3 {
+            margin-bottom: 0.75rem;
+        }
+        .mb-4 {
+            margin-bottom: 1rem;
+        }
+        .mb-6 {
+            margin-bottom: 1.5rem;
+        }
+        .mt-1 {
+            margin-top: 0.25rem;
+        }
+        .mt-2 {
+            margin-top: 0.5rem;
+        }
+        .mt-3 {
+            margin-top: 0.75rem;
+        }
+        .text-xs {
+            font-size: 0.6rem;
+        }
+        .text-sm {
+            font-size: 0.75rem;
+        }
+        .text-slate-500 {
+            color: #64748b;
+        }
+        .text-slate-400 {
+            color: #94a3b8;
+        }
+        .text-slate-600 {
+            color: #475569;
+        }
+        .text-slate-700 {
+            color: #334155;
+        }
+        .text-slate-800 {
+            color: #1e293b;
+        }
+        .text-red-600 {
+            color: #dc2626;
+        }
+        .text-green-600 {
+            color: #16a34a;
+        }
+        .font-bold {
+            font-weight: 700;
+        }
+        .font-semibold {
+            font-weight: 600;
+        }
+        .font-medium {
+            font-weight: 500;
+        }
+        .bg-slate-50 {
+            background: #f8fafc;
+        }
+        .border-t {
+            border-top: 1px solid #e2e8f0;
+        }
+        .border-slate-200 {
+            border-color: #e2e8f0;
+        }
+        .p-3 {
+            padding: 0.75rem;
+        }
+        .p-4 {
+            padding: 1rem;
+        }
+        .rounded-lg {
+            border-radius: 0.5rem;
+        }
+        .w-full {
+            width: 100%;
+        }
+        .hidden {
+            display: none;
+        }
+
+        .stage-detail-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr 1fr;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+        }
+        .stage-detail-grid .stage-item {
+            background: white;
+            border-radius: 8px;
+            padding: 0.4rem 0.6rem;
+            border: 1px solid #e9edf2;
+        }
+        .stage-detail-grid .stage-item .stage-label {
+            font-size: 0.55rem;
+            color: #94a3b8;
+            text-transform: uppercase;
+            font-weight: 600;
+        }
+        .stage-detail-grid .stage-item .stage-value {
+            font-size: 0.85rem;
+            font-weight: 700;
+        }
+
+        .section-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #0f172a;
+            margin-bottom: 0.2rem;
+        }
+        .section-subtitle {
+            font-size: 0.75rem;
+            color: #64748b;
+            margin-bottom: 0.8rem;
+        }
+
+        .legend-color {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 3px;
+            margin-right: 3px;
+        }
+        .legend-ok {
+            background: #22c55e;
+        }
+        .legend-not-ok {
+            background: #ef4444;
+        }
+        .legend-na {
+            background: #94a3b8;
+        }
+
+        /* ===== LEGEND TIMELINE ===== */
+        .legend-timeline {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            font-size: 0.65rem;
+            margin-bottom: 0.5rem;
+        }
+        .legend-timeline .item {
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+        .legend-timeline .dot {
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+        }
+        .legend-timeline .dot.done {
+            background: #22c55e;
+        }
+        .legend-timeline .dot.active {
+            background: #ef4444;
+        }
+        .legend-timeline .dot.pending {
+            background: #e2e8f0;
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 56px;
+                padding: 0.8rem 0.3rem;
+            }
+            .sidebar .logo span {
+                display: none;
+            }
+            .sidebar .logo {
+                font-size: 0.8rem;
+                justify-content: center;
+                padding-bottom: 0.8rem;
+            }
+            .nav-btn {
+                padding: 0.4rem;
+                justify-content: center;
+                font-size: 0.6rem;
+            }
+            .nav-btn .icon {
+                font-size: 0.9rem;
+                width: 1.2rem;
+            }
+            .nav-btn span:not(.icon) {
+                display: none;
+            }
+            .nav-group-label {
+                display: none;
+            }
+            .main {
+                margin-left: 56px;
+                padding: 0.8rem;
+            }
+            .score-grid {
+                grid-template-columns: 1fr;
+            }
+            .grid-charts {
+                grid-template-columns: 1fr;
+            }
+            .ongoing-grid {
+                grid-template-columns: 1fr;
+            }
+            .stage-detail-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+            .filter-bar {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 0.4rem;
+            }
+            .request-form {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .request-form .form-group {
+                width: 100%;
+            }
+            .timeline-row .batch-info {
+                min-width: 80px;
+                font-size: 0.65rem;
+            }
+            .stage-dot {
+                height: 22px;
+                font-size: 0.45rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ===== SIDEBAR ===== -->
+    <div class="sidebar" id="sidebar">
+        <div class="logo">🏭 PCT<span>v3</span></div>
+        <div class="nav-group-label">📊 Monitoring</div>
+        <button class="nav-btn active" data-page="dashboard"><span class="icon">📊</span> Dashboard</button>
+        <div class="nav-group-label">📋 Planning</div>
+        <button class="nav-btn" data-page="ppic"><span class="icon">📋</span> PPIC</button>
+        <div class="nav-group-label">🏭 Produksi</div>
+        <button class="nav-btn" data-page="produksi"><span class="icon">🏭</span> Proses Produksi</button>
+        <button class="nav-btn" data-page="kanban-produksi"><span class="icon">📦</span> Kanban (Wadah/Kemas)</button>
+        <div class="nav-group-label">🚚 Logistic</div>
+        <button class="nav-btn" data-page="logistic"><span class="icon">🚚</span> Proses Logistic</button>
+        <button class="nav-btn" data-page="kanban-logistic"><span class="icon">📦</span> Kanban (Respon)</button>
+        <div class="nav-group-label">🔬 Quality</div>
+        <button class="nav-btn" data-page="qc"><span class="icon">🔬</span> QC</button>
+        <button class="nav-btn" data-page="qa"><span class="icon">📊</span> QA</button>
+    </div>
+
+    <!-- ===== MAIN ===== -->
+    <div class="main" id="mainContent"></div>
+
+    <script>
+        // ================================================================
+        //  DATA & CONFIG
+        // ================================================================
+
+        const SUB_PROSES = {
+            injeksi: ['Setup Mesin', 'Proses Injeksi', 'Pending (Cooling)', 'Finishing / Trimming'],
+            oral: ['Validasi 2', 'Mixing', 'Tabletting', 'Coating', 'Kemas Primer', 'Kemas Sekunder']
+        };
+
+        const QC_SUB = {
+            injeksi: ['Terima Sample', 'Analisa Mikro', 'Release Sample'],
+            oral: ['Terima Sample', 'Analisa Kimia', 'Analisa Mikro', 'Release Sample']
+        };
+
+        const STAGES = ['PPIC', 'LOGISTIC', 'PRODUKSI', 'QC', 'QA', 'DONE'];
+        const STAGE_LABELS = {
+            'PPIC': '📋 PPIC',
+            'LOGISTIC': '🚚 Logistic',
+            'PRODUKSI': '🏭 Produksi',
+            'QC': '🔬 QC',
+            'QA': '📊 QA',
+            'DONE': '✅ Done'
+        };
+
+        const TARGETS = {
+            oral: { logistik: 0.29, produksi: 5, qc: 5.5, qa: 0.125, pctInc: 8.4, pctExcl: 6.8 },
+            injeksi: { logistik: 0.17, produksi: 9, qc: 14.5, qa: 0.17, pct: 16 }
+        };
+
+        let kanbanRequests = [];
+        let data = {};
+        let storageOk = false;
+        let chartTrend = null;
+        let chartBN = null;
+        let currentPage = 'dashboard';
+        let selectedBatch = {};
+
+        // ================================================================
+        //  STORAGE
+        // ================================================================
+
+        try {
+            localStorage.setItem('_test', 'ok');
+            localStorage.removeItem('_test');
+            storageOk = true;
+        } catch (_) { storageOk = false; }
+
+        function createBatch(batchNumber, varian, status) {
+            const subNames = SUB_PROSES[varian] || SUB_PROSES.injeksi;
+            return {
+                batchNumber,
+                varian,
+                status,
+                currentStep: 0,
+                createdAt: new Date().toISOString(),
+                subProses: subNames.map(name => ({ name, status: 'BELUM', startTime: null, endTime: null, problem: '' })),
+                bulan: '',
+                kode: '',
+                logistic: { timbang: null, serahTerima: null, keterangan: '' },
+                produksi: { bpp: null, kirimDok: null, keterangan: '' },
+                qc: { terimaSample: null, estimasiLWS: null, analisaKimia: null, analisaMikro: null, releaseSample: null,
+                    keterangan: '' },
+                qa: { release: null, keterangan: '' },
+                pct: { site: null, incMikro: null, exclMikro: null, onGoing: null, estRilis: null, estPCT: null },
+                keterangan: ''
+            };
+        }
+
+        // ================================================================
+        //  PARSE DATE
+        // ================================================================
+
+        function parseDateMMDDYYYY(dateStr) {
+            if (!dateStr) return null;
+            try {
+                const parts = dateStr.trim().split(' ');
+                const dateParts = parts[0].split('/');
+                if (dateParts.length !== 3) return null;
+                const month = parseInt(dateParts[0]) - 1;
+                const day = parseInt(dateParts[1]);
+                const year = parseInt(dateParts[2]);
+                let hours = 0,
+                    minutes = 0,
+                    seconds = 0;
+                if (parts.length > 1) {
+                    const timeParts = parts[1].split(':');
+                    hours = parseInt(timeParts[0]) || 0;
+                    minutes = parseInt(timeParts[1]) || 0;
+                    seconds = parseInt(timeParts[2]) || 0;
+                }
+                const d = new Date(year, month, day, hours, minutes, seconds);
+                if (isNaN(d.getTime())) return null;
+                return d.toISOString();
+            } catch (_) { return null; }
+        }
+
+        function parseDateDDMMYYYY(dateStr) {
+            if (!dateStr) return null;
+            try {
+                const parts = dateStr.trim().split('/');
+                if (parts.length !== 3) return null;
+                const month = parseInt(parts[0]) - 1;
+                const day = parseInt(parts[1]);
+                const year = parseInt(parts[2]);
+                const d = new Date(year, month, day);
+                if (isNaN(d.getTime())) return null;
+                return d.toISOString();
+            } catch (_) { return null; }
+        }
+
+        // ================================================================
+        //  DEFAULT DATA
+        // ================================================================
+
+        function getDefaultData() {
+            const oralBatches = [];
+            const oralData = [
+                ['March', 'TTFEF', 'TTFEF61862', 'Rutin', '3/13/2026 17:56:00', '3/14/2026 0:50:00', '0.3', '',
+                    '3/25/2026 16:05:00', '3/25/2026 10:00:00', '11.4',
+                    'Penjadwalan RKHP Terpotong libur idul fitri 18 - 24 Mar 2026', '3/18/2026 10:00:00', '3/24/2026',
+                    '3/25/2026 8:30:00', '3/26/2026 8:30:00', '1.0', '7.9', 'Libur lebaran, pending release',
+                    '3/26/2026 13:11:00', '0.2', '', '12.8', '11.8', ''
+                ],
+                ['March', 'TTFEF', 'TTFEF61863', 'Rutin', '3/16/2026 8:54:00', '3/16/2026 14:09:00', '0.2', '',
+                    '3/26/2026 1:41:00', '3/26/2026 12:00:00', '9.9',
+                    'Penjadwalan RKHP Terpotong libur idul fitri 18 - 24 Mar 2026', '3/18/2026 10:00:00', '3/24/2026',
+                    '3/25/2026 8:30:00', '3/26/2026 8:30:00', '1.0', '7.9', 'Libur lebaran, pending release',
+                    '3/26/2026 15:19:00', '0.1', '', '10.3', '9.3', ''
+                ],
+                ['March', 'TTFEF', 'TTFEF61864', 'Rutin', '3/16/2026 9:05:00', '3/16/2026 14:09:00', '0.2', '',
+                    '3/26/2026 11:00:00', '3/26/2026 14:00:00', '10.0',
+                    'Penjadwalan RKHP Terpotong libur idul fitri 18 - 24 Mar 2026', '3/21/2026 10:00:00', '3/24/2026',
+                    '3/25/2026 8:30:00', '3/26/2026 8:30:00', '1.0', '4.9', '', '3/26/2026 15:21:00', '0.1', '',
+                    '10.3', '9.3', ''
+                ]
+            ];
+
+            for (const row of oralData) {
+                const b = createBatch(row[2], 'oral', 'DONE');
+                b.bulan = row[0];
+                b.kode = row[1];
+                b.logistic.timbang = parseDateMMDDYYYY(row[4]);
+                b.logistic.serahTerima = parseDateMMDDYYYY(row[5]);
+                b.logistic.keterangan = row[7];
+                b.produksi.bpp = parseDateMMDDYYYY(row[8]);
+                b.produksi.kirimDok = parseDateMMDDYYYY(row[9]);
+                b.produksi.keterangan = row[11];
+                b.qc.terimaSample = parseDateMMDDYYYY(row[12]);
+                b.qc.estimasiLWS = parseDateDDMMYYYY(row[13]);
+                b.qc.analisaKimia = parseDateMMDDYYYY(row[14]);
+                b.qc.analisaMikro = parseDateMMDDYYYY(row[15]);
+                b.qc.keterangan = row[17];
+                b.qa.release = parseDateMMDDYYYY(row[18]);
+                b.qa.keterangan = row[20];
+                b.pct.incMikro = parseFloat(row[21]);
+                b.pct.exclMikro = parseFloat(row[22]);
+                b.createdAt = b.logistic.timbang || new Date().toISOString();
+                const subNames = SUB_PROSES.oral;
+                b.subProses = subNames.map((name, i) => {
+                    const start = i === 0 ? b.produksi.bpp : null;
+                    const end = i === subNames.length - 1 ? b.produksi.kirimDok : null;
+                    return { name, status: 'DONE', startTime: start, endTime: end, problem: '' };
+                });
+                oralBatches.push(b);
+            }
+
+            const injeksiBatches = [];
+            const injeksiData = [
+                ['Reject', 'VVCND', 'VVCND50113', 'Rutin', '12/26/2025 11:11:00', '12/26/2025 21:45:00', '0.4',
+                    'personil support PQ in op prod, material eksipien digunakan utk in op PQ, menunggu jadwal PQ yg molor',
+                    '1/21/2026 10:11:29', '1/21/2026 13:00:00', '25.6', 'Ini musnah kadar TMS', '12/31/2025 18:30:00',
+                    '1/12/2026', '', '', '', '', '', 'Reject', '', '', '', '', '', '12/28/2025 11:11:00'
+                ],
+                ['January', 'VBXLF', 'VBXLF50145', 'Rutin', '12/27/2025 9:42:00', '12/27/2025 14:30:00', '0.2', '',
+                    '1/5/2026 12:48:00', '', '', 'Problem AHU PQ, terpotong Sabtu-Minggu, Pallet defect etiket',
+                    '12/30/2025 17:09:00', '1/13/2026', '1/13/2026 10:00:00', '', '', '13.7', '', '1/13/2026 14:25:00',
+                    '', '', '17.2', '', '', '12/29/2025 9:42:00'
+                ],
+                ['January', 'VBXLF', 'VBXLF50146', 'Rutin', '12/27/2025 9:48:00', '12/27/2025 14:30:00', '0.2', '',
+                    '1/6/2026 10:19:00', '', '', 'Pallet defect etiket', '12/30/2025 17:09:00', '1/13/2026',
+                    '1/13/2026 10:00:00', '', '', '13.7', '', '1/13/2026 14:23:00', '', '', '17.2', '', '',
+                    '12/29/2025 9:48:00'
+                ]
+            ];
+
+            for (const row of injeksiData) {
+                const status = row[0] === 'Reject' ? 'QC' : 'DONE';
+                const b = createBatch(row[2], 'injeksi', status);
+                b.bulan = row[0];
+                b.kode = row[1];
+                b.logistic.timbang = parseDateMMDDYYYY(row[4]);
+                b.logistic.serahTerima = parseDateMMDDYYYY(row[5]);
+                b.logistic.keterangan = row[7];
+                b.produksi.bpp = parseDateMMDDYYYY(row[8]);
+                b.produksi.kirimDok = parseDateMMDDYYYY(row[9]);
+                b.produksi.keterangan = row[11];
+                b.qc.terimaSample = parseDateMMDDYYYY(row[12]);
+                b.qc.estimasiLWS = parseDateDDMMYYYY(row[13]);
+                b.qc.analisaMikro = parseDateMMDDYYYY(row[14]);
+                b.qc.keterangan = row[16];
+                b.qa.release = parseDateMMDDYYYY(row[17]);
+                b.qa.keterangan = row[19];
+                b.pct.site = parseFloat(row[20]);
+                b.createdAt = b.logistic.timbang || new Date().toISOString();
+                const subNames = SUB_PROSES.injeksi;
+                b.subProses = subNames.map((name, i) => {
+                    const start = i === 0 ? b.produksi.bpp : null;
+                    const end = i === subNames.length - 1 ? b.produksi.kirimDok : null;
+                    return { name, status: status === 'DONE' ? 'DONE' : 'BELUM', startTime: start, endTime: end,
+                        problem: '' };
+                });
+                injeksiBatches.push(b);
+            }
+
+            return { injeksi: injeksiBatches, oral: oralBatches };
+        }
+
+        function getDefaultKanban() {
+            return [
+                { id: 1, batchNumber: 'TTFEF61862', varian: 'oral', type: 'WADAH', tanggal: '08-07-2026',
+                    jam: '09:00', status: 'READY', notes: 'Wadah tersedia' },
+                { id: 2, batchNumber: 'TTFEF61863', varian: 'oral', type: 'KEMAS', tanggal: '08-07-2026',
+                    jam: '09:30', status: 'REQUESTED', notes: '' },
+                { id: 3, batchNumber: 'VBXLF50145', varian: 'injeksi', type: 'WADAH', tanggal: '08-07-2026',
+                    jam: '10:00', status: 'READY', notes: '' },
+            ];
+        }
+
+        // ================================================================
+        //  LOAD & SAVE
+        // ================================================================
+
+        function loadData() {
+            const defaultData = getDefaultData();
+            try {
+                if (storageOk) {
+                    const saved = localStorage.getItem('pct_data_v3');
+                    if (saved) {
+                        const parsed = JSON.parse(saved);
+                        if (parsed.injeksi && parsed.oral) {
+                            data = parsed;
+                        } else {
+                            data = defaultData;
+                        }
+                        if (parsed.kanban) {
+                            kanbanRequests = parsed.kanban;
+                        } else {
+                            kanbanRequests = getDefaultKanban();
+                        }
+                    } else {
+                        data = defaultData;
+                        kanbanRequests = getDefaultKanban();
+                    }
+                } else {
+                    data = defaultData;
+                    kanbanRequests = getDefaultKanban();
+                }
+            } catch (error) {
+                console.error('Error loading data:', error);
+                data = defaultData;
+                kanbanRequests = getDefaultKanban();
+            }
+        }
+
+        function saveData() {
+            if (storageOk) {
+                try {
+                    localStorage.setItem('pct_data_v3', JSON.stringify({ ...data, kanban: kanbanRequests }));
+                } catch (_) { console.warn('Failed to save data'); }
+            }
+        }
+
+        loadData();
+
+        // ================================================================
+        //  UTILITY
+        // ================================================================
+
+        function getCurrentDate() {
+            const d = new Date();
+            const dd = String(d.getDate()).padStart(2, '0');
+            const mm = String(d.getMonth() + 1).padStart(2, '0');
+            const yyyy = d.getFullYear();
+            return `${dd}-${mm}-${yyyy}`;
+        }
+
+        function getCurrentTime() {
+            const d = new Date();
+            const hh = String(d.getHours()).padStart(2, '0');
+            const mi = String(d.getMinutes()).padStart(2, '0');
+            return `${hh}:${mi}`;
+        }
+
+        function formatDateDisplay(iso) {
+            if (!iso) return '-';
+            try {
+                const d = new Date(iso);
+                if (isNaN(d.getTime())) return '-';
+                const dd = String(d.getDate()).padStart(2, '0');
+                const mm = String(d.getMonth() + 1).padStart(2, '0');
+                const yyyy = d.getFullYear();
+                return `${dd}-${mm}-${yyyy}`;
+            } catch (_) { return '-'; }
+        }
+
+        function formatDateTimeDisplay(iso) {
+            if (!iso) return '-';
+            try {
+                const d = new Date(iso);
+                if (isNaN(d.getTime())) return '-';
+                const dd = String(d.getDate()).padStart(2, '0');
+                const mm = String(d.getMonth() + 1).padStart(2, '0');
+                const yyyy = d.getFullYear();
+                const hh = String(d.getHours()).padStart(2, '0');
+                const mi = String(d.getMinutes()).padStart(2, '0');
+                return `${dd}-${mm}-${yyyy} ${hh}:${mi}`;
+            } catch (_) { return '-'; }
+        }
+
+        function daysDiff(start, end) {
+            if (!start || !end) return null;
+            try {
+                const d1 = new Date(start);
+                const d2 = new Date(end);
+                if (isNaN(d1.getTime()) || isNaN(d2.getTime())) return null;
+                const diff = d2 - d1;
+                return diff / (1000 * 60 * 60 * 24);
+            } catch (_) { return null; }
+        }
+
+        function formatDurationDays(days) {
+            if (days === null || days === undefined || isNaN(days)) return '-';
+            return days.toFixed(2);
+        }
+
+        function getStatusBadge(status) {
+            const map = {
+                'PPIC': 'badge-ppic',
+                'LOGISTIC': 'badge-logistic',
+                'PRODUKSI': 'badge-produksi',
+                'QC': 'badge-qc',
+                'QA': 'badge-qa',
+                'DONE': 'badge-done'
+            };
+            return `badge-status ${map[status] || 'badge-ppic'}`;
+        }
+
+        function getStatusLabel(status) {
+            if (status === 'DONE') return '✅ DONE';
+            return status;
+        }
+
+        function getVarianLabel(varian) {
+            return varian === 'injeksi' ? 'INJEKSI' : 'ORAL';
+        }
+
+        function getVarianBadge(varian) {
+            return varian === 'injeksi' ? 'varian-injeksi' : 'varian-oral';
+        }
+
+        function getKanbanStatusBadge(status) {
+            const map = {
+                'REQUESTED': 'badge-kanban-request',
+                'READY': 'badge-kanban-ready',
+                'PROBLEM': 'badge-kanban-problem'
+            };
+            return `badge-status ${map[status] || 'badge-kanban-request'}`;
+        }
+
+        function getKanbanStatusLabel(status) {
+            const map = {
+                'REQUESTED': '🟡 Request',
+                'READY': '🟢 Ready',
+                'PROBLEM': '🔴 Problem'
+            };
+            return map[status] || status;
+        }
+
+        function getStepStatusLabel(st) {
+            const map = {
+                'BELUM': 'Belum',
+                'ON PROGRESS': 'Progress',
+                'DONE': 'Done',
+                'PROBLEM': 'Problem'
+            };
+            return map[st] || st;
+        }
+
+        function getStepStatusClass(st) {
+            const map = {
+                'BELUM': 'step-status-belum',
+                'ON PROGRESS': 'step-status-progress',
+                'DONE': 'step-status-done',
+                'PROBLEM': 'step-status-problem'
+            };
+            return map[st] || 'step-status-belum';
+        }
+
+        function getStepClass(st) {
+            if (st === 'DONE') return 'done';
+            if (st === 'ON PROGRESS') return 'active';
+            if (st === 'PROBLEM') return 'problem';
+            return '';
+        }
+
+        function getStatusClass(value, target, isLowerBetter = true) {
+            if (value === null || value === undefined || isNaN(value)) return 'cell-na';
+            if (target === null || target === undefined) return 'cell-na';
+            if (isLowerBetter) {
+                return value <= target ? 'cell-ok' : 'cell-not-ok';
+            } else {
+                return value >= target ? 'cell-ok' : 'cell-not-ok';
+            }
+        }
+
+        function renderStatusCell(value, target, isLowerBetter = true) {
+            const cls = getStatusClass(value, target, isLowerBetter);
+            const label = formatDurationDays(value);
+            if (cls === 'cell-na') return `<span class="cell-na">${label}</span>`;
+            if (cls === 'cell-ok') return `<span class="cell-ok">✅ ${label}</span>`;
+            return `<span class="cell-not-ok">⚠️ ${label}</span>`;
+        }
+
+        // ================================================================
+        //  PCT CALCULATIONS
+        // ================================================================
+
+        function getStageDuration(batch, stage) {
+            if (stage === 'LOGISTIC') {
+                const start = batch.logistic?.timbang;
+                const end = batch.logistic?.serahTerima;
+                return daysDiff(start, end);
+            }
+            if (stage === 'PRODUKSI') {
+                const start = batch.produksi?.bpp;
+                const end = batch.produksi?.kirimDok;
+                return daysDiff(start, end);
+            }
+            if (stage === 'QC') {
+                const start = batch.qc?.terimaSample;
+                let end = batch.qc?.analisaMikro || batch.qc?.analisaKimia || null;
+                if (batch.status === 'QC' && start && !end) {
+                    end = new Date().toISOString();
+                }
+                return daysDiff(start, end);
+            }
+            if (stage === 'QA') {
+                const start = batch.qa?.release;
+                if (batch.status === 'QA' && start) {
+                    return daysDiff(start, new Date().toISOString());
+                }
+                if (batch.status === 'DONE' && start) {
+                    return daysDiff(start, start);
+                }
+                return null;
+            }
+            if (stage === 'TOTAL') {
+                if (batch.status !== 'DONE') return null;
+                return daysDiff(batch.createdAt, batch.qa?.release || batch.createdAt);
+            }
+            return null;
+        }
+
+        function getPCTSite(batch, includeMikro = true) {
+            const total = getStageDuration(batch, 'TOTAL');
+            if (total === null) return null;
+            if (includeMikro) return total;
+            return Math.max(0, total - 1.6);
+        }
+
+        function getPCTOnGoing(batch) {
+            const start = batch.logistic?.timbang || batch.createdAt;
+            if (!start) return null;
+            return daysDiff(start, new Date().toISOString());
+        }
+
+        function getTarget(batch, stage) {
+            const varian = batch.varian;
+            const targets = TARGETS[varian] || TARGETS.oral;
+            if (stage === 'LOGISTIC') return targets.logistik;
+            if (stage === 'PRODUKSI') return targets.produksi;
+            if (stage === 'QC') return targets.qc;
+            if (stage === 'QA') return targets.qa;
+            if (stage === 'PCT_INC') return targets.pctInc || targets.pct;
+            if (stage === 'PCT_EXCL') return targets.pctExcl || targets.pct;
+            if (stage === 'PCT_ONGOING') return targets.pct || targets.pctInc || 8.4;
+            return null;
+        }
+
+        function getNextStage(cur) {
+            const idx = STAGES.indexOf(cur);
+            if (idx >= 0 && idx < STAGES.length - 1) return STAGES[idx + 1];
+            return cur;
+        }
+
+        // ================================================================
+        //  GET STAGE STATUS FOR TIMELINE
+        // ================================================================
+
+        function getStageStatus(batch, stage) {
+            const status = batch.status;
+            const stageIndex = STAGES.indexOf(stage);
+            const batchIndex = STAGES.indexOf(status);
+
+            if (status === 'DONE') return 'done';
+            if (stageIndex < batchIndex) return 'done';
+            if (stageIndex === batchIndex) return 'active';
+            return 'pending';
+        }
+
+        function getStageTooltip(batch, stage) {
+            const stageStatus = getStageStatus(batch, stage);
+            if (stageStatus === 'done') {
+                // Cek problem di stage ini
+                let problem = '';
+                if (stage === 'LOGISTIC') problem = batch.logistic?.keterangan || '';
+                else if (stage === 'PRODUKSI') problem = batch.produksi?.keterangan || '';
+                else if (stage === 'QC') problem = batch.qc?.keterangan || '';
+                else if (stage === 'QA') problem = batch.qa?.keterangan || '';
+                if (problem) return `✅ Selesai (⚠️ ${problem})`;
+                return '✅ Selesai';
+            }
+            if (stageStatus === 'active') {
+                let problem = '';
+                if (stage === 'LOGISTIC') problem = batch.logistic?.keterangan || '';
+                else if (stage === 'PRODUKSI') problem = batch.produksi?.keterangan || '';
+                else if (stage === 'QC') problem = batch.qc?.keterangan || '';
+                else if (stage === 'QA') problem = batch.qa?.keterangan || '';
+                if (problem) return `⏳ On Going (⚠️ ${problem})`;
+                return '⏳ On Going';
+            }
+            return '⏳ Menunggu';
+        }
+
+        // ================================================================
+        //  RENDER
+        // ================================================================
+
+        function render() {
+            const main = document.getElementById('mainContent');
+            switch (currentPage) {
+                case 'dashboard':
+                    renderDashboard(main);
+                    break;
+                case 'ppic':
+                    renderPPIC(main);
+                    break;
+                case 'logistic':
+                    renderStage(main, 'LOGISTIC', '🚚 Logistic - Timbang & Serah Terima');
+                    break;
+                case 'produksi':
+                    renderStage(main, 'PRODUKSI', '🏭 Produksi - Proses Produksi');
+                    break;
+                case 'qc':
+                    renderQC(main);
+                    break;
+                case 'qa':
+                    renderStage(main, 'QA', '📊 QA - Quality Assurance');
+                    break;
+                case 'kanban-produksi':
+                    renderKanbanProduksi(main);
+                    break;
+                case 'kanban-logistic':
+                    renderKanbanLogistic(main);
+                    break;
+                default:
+                    main.innerHTML = '<div class="card"><p>Halaman tidak ditemukan</p></div>';
+            }
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.page === currentPage);
+            });
+        }
+
+        // ================================================================
+        //  DASHBOARD - WITH TIMELINE
+        // ================================================================
+
+        function renderDashboard(el) {
+            const allBatches = [...data.injeksi, ...data.oral];
+            const oralBatches = data.oral;
+            const injeksiBatches = data.injeksi;
+
+            const oralDone = oralBatches.filter(b => b.status === 'DONE');
+            const injeksiDone = injeksiBatches.filter(b => b.status === 'DONE');
+
+            const oralPCTInc = oralDone.map(b => getPCTSite(b, true)).filter(v => v !== null);
+            const oralPCTExcl = oralDone.map(b => getPCTSite(b, false)).filter(v => v !== null);
+            const injeksiPCT = injeksiDone.map(b => getPCTSite(b, true)).filter(v => v !== null);
+
+            const avgOralInc = oralPCTInc.length > 0 ? oralPCTInc.reduce((a, b) => a + b, 0) / oralPCTInc.length : 0;
+            const avgOralExcl = oralPCTExcl.length > 0 ? oralPCTExcl.reduce((a, b) => a + b, 0) / oralPCTExcl.length : 0;
+            const avgInjeksi = injeksiPCT.length > 0 ? injeksiPCT.reduce((a, b) => a + b, 0) / injeksiPCT.length : 0;
+
+            const onGoing = allBatches.filter(b => b.status !== 'DONE' && b.status !== 'PPIC');
+
+            const oralOk = avgOralInc <= 8.4;
+            const injeksiOk = avgInjeksi <= 16;
+
+            // Timeline stages (tanpa PPIC dan DONE untuk visualisasi)
+            const timelineStages = ['LOGISTIC', 'PRODUKSI', 'QC', 'QA'];
+
+            let html = `
+            <div class="mb-4">
+              <div class="section-title">📊 Dashboard PCT - GOF</div>
+              <div class="section-subtitle">Periode: 1 Jul 2026 - 31 Jul 2026</div>
+            </div>
+
+            <div class="filter-bar">
+              <span class="filter-label">🔍 Filter:</span>
+              <span class="filter-value">1 Jul 2026 - 31 Jul 2026</span>
+              <span class="filter-badge">📦 Total: <strong>${allBatches.length}</strong></span>
+              <span class="filter-badge">✅ Selesai: <strong>${oralDone.length + injeksiDone.length}</strong></span>
+              <span class="filter-badge">⏳ On Going: <strong>${onGoing.length}</strong></span>
+            </div>
+
+            <div class="score-grid mb-4">
+              <div class="score-card-line">
+                <div class="status-big">${oralOk ? '✅' : '⚠️'}</div>
+                <div class="line-title">📋 LINE ORAL</div>
+                <div class="line-value" style="color: ${avgOralInc > 0 ? (avgOralInc <= 8.4 ? '#22c55e' : '#ef4444') : '#64748b'}">
+                  ${avgOralInc > 0 ? avgOralInc.toFixed(1) : '-'}
+                </div>
+                <div class="line-target">
+                  Target PCT Include Mikro: <strong>8.4 hari</strong>
+                  <span class="${avgOralInc > 0 ? (avgOralInc <= 8.4 ? 'ok' : 'not-ok') : ''}">
+                    ${avgOralInc > 0 ? (avgOralInc <= 8.4 ? '✅ On Track' : '⚠️ Above Target') : ''}
+                  </span>
+                </div>
+                <div class="line-target">
+                  Target PCT Exclude Mikro: <strong>6.8 hari</strong>
+                  <span class="${avgOralExcl > 0 ? (avgOralExcl <= 6.8 ? 'ok' : 'not-ok') : ''}">
+                    ${avgOralExcl > 0 ? (avgOralExcl <= 6.8 ? '✅' : '⚠️') : ''}
+                    ${avgOralExcl > 0 ? avgOralExcl.toFixed(1) + ' hari' : ''}
+                  </span>
+                </div>
+                <div class="line-sub">${oralDone.length} batch selesai</div>
+              </div>
+
+              <div class="score-card-line">
+                <div class="status-big">${injeksiOk ? '✅' : '⚠️'}</div>
+                <div class="line-title">💉 LINE INJEKSI</div>
+                <div class="line-value" style="color: ${avgInjeksi > 0 ? (avgInjeksi <= 16 ? '#22c55e' : '#ef4444') : '#64748b'}">
+                  ${avgInjeksi > 0 ? avgInjeksi.toFixed(2) : '-'}
+                </div>
+                <div class="line-target">
+                  Target PCT Site: <strong>16 hari</strong>
+                  <span class="${avgInjeksi > 0 ? (avgInjeksi <= 16 ? 'ok' : 'not-ok') : ''}">
+                    ${avgInjeksi > 0 ? (avgInjeksi <= 16 ? '✅ On Track' : '⚠️ Above Target') : ''}
+                  </span>
+                </div>
+                <div class="line-sub">${injeksiDone.length} batch selesai</div>
+              </div>
+            </div>
+
+            <!-- ===== TIMELINE VISUAL ===== -->
+            <div class="card mb-4">
+              <div class="card-header">
+                <h3>📈 Progress Timeline per Batch</h3>
+                <div class="legend-timeline">
+                  <span class="item"><span class="dot done"></span> Selesai</span>
+                  <span class="item"><span class="dot active"></span> On Going</span>
+                  <span class="item"><span class="dot pending"></span> Menunggu</span>
+                </div>
+              </div>
+              <div class="timeline-container">
+                ${allBatches.map(b => {
+                  const varianLabel = getVarianLabel(b.varian);
+                  const status = b.status;
+                  const isDone = status === 'DONE';
+                  const stageIndex = STAGES.indexOf(status);
+                  
+                  return `
+                    <div class="timeline-row" onclick="window.location.href='#'" title="Klik untuk detail">
+                      <div class="batch-info">
+                        ${b.batchNumber}
+                        <span class="varian">${varianLabel}</span>
+                      </div>
+                      <div class="timeline-stages">
+                        ${timelineStages.map(stage => {
+                          const stageStatus = getStageStatus(b, stage);
+                          const tooltip = getStageTooltip(b, stage);
+                          const stageLabel = stage.charAt(0) + stage.slice(1).toLowerCase();
+                          let dotClass = 'stage-dot';
+                          if (stageStatus === 'done') dotClass += ' done';
+                          else if (stageStatus === 'active') dotClass += ' active';
+                          else dotClass += ' pending';
+                          
+                          // Cek problem
+                          let problem = '';
+                          if (stage === 'LOGISTIC') problem = b.logistic?.keterangan || '';
+                          else if (stage === 'PRODUKSI') problem = b.produksi?.keterangan || '';
+                          else if (stage === 'QC') problem = b.qc?.keterangan || '';
+                          else if (stage === 'QA') problem = b.qa?.keterangan || '';
+                          
+                          const hasProblem = problem && (stageStatus === 'done' || stageStatus === 'active');
+                          
+                          return `
+                            <div class="${dotClass} tooltip-custom">
+                              ${stageLabel}
+                              ${hasProblem ? `<span class="problem-icon">⚠️</span>` : ''}
+                              <div class="tooltip-content">
+                                ${STAGE_LABELS[stage] || stage}<br>
+                                ${tooltip}
+                                ${problem ? `<br>📌 ${problem}` : ''}
+                              </div>
+                            </div>
+                          `;
+                        }).join('')}
+                        <div class="stage-dot ${isDone ? 'done' : (status === 'PPIC' ? 'pending' : 'pending')}" style="flex:0.5;">
+                          ${isDone ? '✅' : (status === 'PPIC' ? '📋' : '⏳')}
+                          <div class="tooltip-content">
+                            ${isDone ? '✅ Selesai' : (status === 'PPIC' ? '📋 Di PPIC' : '⏳ Menunggu')}
+                          </div>
+                        </div>
+                      </div>
+                      <div style="min-width:60px;text-align:right;font-size:0.65rem;color:#64748b;">
+                        ${isDone ? '✅ Done' : status}
+                      </div>
+                    </div>
+                  `;
+                }).join('')}
+              </div>
+            </div>
+
+            <div class="grid-charts mb-4">
+              <div class="card">
+                <div class="card-header">
+                  <h3>📈 Trend PCT Site</h3>
+                  <span class="badge">Oral <strong>${avgOralInc > 0 ? avgOralInc.toFixed(1) : '-'}</strong> | Injeksi <strong>${avgInjeksi > 0 ? avgInjeksi.toFixed(2) : '-'}</strong></span>
+                </div>
+                <div class="chart-wrapper">
+                  <canvas id="chartTrend"></canvas>
+                </div>
+              </div>
+              <div class="card">
+                <div class="card-header">
+                  <h3>📊 PCT Site per BN</h3>
+                  <span class="badge">Rata-rata: <strong>${((avgOralInc + avgInjeksi) / 2).toFixed(2)}</strong></span>
+                </div>
+                <div class="chart-wrapper">
+                  <canvas id="chartBN"></canvas>
+                </div>
+              </div>
+            </div>
+
+            <div class="card mb-4">
+              <div class="card-header">
+                <h3>📋 Detail PCT Site per Batch</h3>
+                <div style="display:flex; gap:0.5rem; flex-wrap:wrap; font-size:0.6rem;">
+                  <span><span class="legend-color legend-ok"></span> On Target</span>
+                  <span><span class="legend-color legend-not-ok"></span> Above Target</span>
+                  <span><span class="legend-color legend-na"></span> No Data</span>
+                </div>
+              </div>
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Batch</th>
+                      <th>Line</th>
+                      <th>Rilis</th>
+                      <th>PCT Inc</th>
+                      <th>PCT Excl</th>
+                      <th>Logistik</th>
+                      <th>Produksi</th>
+                      <th>QC</th>
+                      <th>QA</th>
+                      <th>PCT On Going</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${allBatches.map(b => {
+                      const isOral = b.varian === 'oral';
+                      const line = isOral ? 'ORAL' : 'INJEKSI';
+                      const releaseDate = b.status === 'DONE' ? formatDateDisplay(b.qa?.release) : '-';
+                      const pctInc = getPCTSite(b, true);
+                      const pctExcl = getPCTSite(b, false);
+                      const logistik = getStageDuration(b, 'LOGISTIC');
+                      const produksi = getStageDuration(b, 'PRODUKSI');
+                      const qc = getStageDuration(b, 'QC');
+                      const qa = getStageDuration(b, 'QA');
+                      const pctOnGoing = getPCTOnGoing(b);
+                      const targetPct = getTarget(b, 'PCT_INC');
+                      const targetLog = getTarget(b, 'LOGISTIC');
+                      const targetProd = getTarget(b, 'PRODUKSI');
+                      const targetQC = getTarget(b, 'QC');
+                      const targetQA = getTarget(b, 'QA');
+                      const targetOngoing = getTarget(b, 'PCT_ONGOING');
+
+                      return `
+                        <tr>
+                          <td><strong>${b.batchNumber}</strong></td>
+                          <td><span class="varian-badge ${getVarianBadge(b.varian)}">${line}</span></td>
+                          <td>${releaseDate}</td>
+                          <td>${renderStatusCell(pctInc, targetPct)}</td>
+                          <td>${renderStatusCell(pctExcl, targetPct)}</td>
+                          <td>${renderStatusCell(logistik, targetLog)}</td>
+                          <td>${renderStatusCell(produksi, targetProd)}</td>
+                          <td>${renderStatusCell(qc, targetQC)}</td>
+                          <td>${renderStatusCell(qa, targetQA)}</td>
+                          <td>${renderStatusCell(pctOnGoing, targetOngoing)}</td>
+                        </tr>
+                      `;
+                    }).join('')}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-header">
+                <h3>🏃 On Going - Batch Dalam Proses</h3>
+                <span class="badge">${onGoing.length} batch aktif</span>
+              </div>
+              <div class="ongoing-grid">
+                ${onGoing.length === 0 ? '<div class="empty-state">Tidak ada batch yang sedang berjalan</div>' : ''}
+                ${onGoing.map(b => {
+                  const pctOnGoing = getPCTOnGoing(b);
+                  const statusMap = {
+                    'LOGISTIC': '🚚 Logistic',
+                    'PRODUKSI': '🏭 Produksi',
+                    'QC': '🔬 QC',
+                    'QA': '📊 QA'
+                  };
+                  const statusLabel = statusMap[b.status] || b.status;
+                  const target = getTarget(b, 'PCT_ONGOING');
+                  const isWarning = pctOnGoing !== null && target !== null && pctOnGoing > target;
+                  const cardClass = isWarning ? 'ongoing-card warning' : (pctOnGoing !== null ? 'ongoing-card success' : 'ongoing-card');
+                  const estRilis = b.pct?.estRilis || formatDateDisplay(new Date(Date.now() + 7 * 24 * 60 * 60 * 1000));
+                  return `
+                    <div class="${cardClass}">
+                      <div>
+                        <div class="batch">${b.batchNumber}</div>
+                        <div><span class="status">${statusLabel}</span></div>
+                      </div>
+                      <div style="text-align:right;">
+                        <div class="pct">${pctOnGoing !== null ? pctOnGoing.toFixed(2) : '-'} hari</div>
+                        <div class="target">Target Rilis: ${estRilis}</div>
+                      </div>
+                    </div>
+                  `;
+                }).join('')}
+              </div>
+            </div>
+          `;
+
+            el.innerHTML = html;
+            setTimeout(() => renderCharts(), 100);
+        }
+
+        // ================================================================
+        //  CHARTS
+        // ================================================================
+
+        function renderCharts() {
+            const ctx1 = document.getElementById('chartTrend');
+            const ctx2 = document.getElementById('chartBN');
+
+            if (!ctx1 || !ctx2) {
+                console.warn('Canvas untuk chart tidak ditemukan');
+                return;
+            }
+
+            const allBatches = [...data.injeksi, ...data.oral];
+            const doneBatches = allBatches.filter(b => b.status === 'DONE');
+
+            if (chartTrend) { chartTrend.destroy();
+                chartTrend = null; }
+            if (chartBN) { chartBN.destroy();
+                chartBN = null; }
+
+            if (doneBatches.length === 0) {
+                return;
+            }
+
+            try {
+                const sorted = [...doneBatches].sort((a, b) =>
+                    new Date(a.qa?.release || a.createdAt) - new Date(b.qa?.release || b.createdAt)
+                );
+                const labels = sorted.map(b => formatDateDisplay(b.qa?.release));
+                const dataInc = sorted.map(b => getPCTSite(b, true));
+                const dataExcl = sorted.map(b => getPCTSite(b, false));
+
+                chartTrend = new Chart(ctx1, {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'PCT Inc Mikro',
+                            data: dataInc,
+                            borderColor: '#3b82f6',
+                            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                            tension: 0.3,
+                            fill: true,
+                            pointBackgroundColor: '#3b82f6',
+                            pointBorderColor: 'white',
+                            pointBorderWidth: 2,
+                            pointRadius: 4
+                        }, {
+                            label: 'PCT Excl Mikro',
+                            data: dataExcl,
+                            borderColor: '#22c55e',
+                            backgroundColor: 'rgba(34, 197, 94, 0.1)',
+                            tension: 0.3,
+                            fill: true,
+                            pointBackgroundColor: '#22c55e',
+                            pointBorderColor: 'white',
+                            pointBorderWidth: 2,
+                            pointRadius: 4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { position: 'top', labels: { font: { size: 9 }, boxWidth: 10, padding: 6 } }
+                        },
+                        scales: {
+                            y: { beginAtZero: true, title: { display: true, text: 'Hari', font: { size: 9 } } },
+                            x: { ticks: { font: { size: 8 }, maxRotation: 45 } }
+                        }
+                    }
+                });
+
+                const sorted2 = [...doneBatches].sort((a, b) => {
+                    const pctA = getPCTSite(a, true) || 0;
+                    const pctB = getPCTSite(b, true) || 0;
+                    return pctB - pctA;
+                });
+                const labels2 = sorted2.map(b => b.batchNumber);
+                const data2 = sorted2.map(b => getPCTSite(b, true));
+                const colors = data2.map(v => {
+                    if (v === null) return '#94a3b8';
+                    const isOral = sorted2[data2.indexOf(v)]?.varian === 'oral';
+                    const target = isOral ? 8.4 : 16;
+                    return v <= target ? '#22c55e' : '#ef4444';
+                });
+
+                chartBN = new Chart(ctx2, {
+                    type: 'bar',
+                    data: {
+                        labels: labels2,
+                        datasets: [{
+                            label: 'PCT Site (hari)',
+                            data: data2,
+                            backgroundColor: colors,
+                            borderRadius: 4,
+                            borderColor: colors.map(c => c),
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            y: { beginAtZero: true, title: { display: true, text: 'Hari', font: { size: 9 } } },
+                            x: { ticks: { font: { size: 7 }, maxRotation: 45 } }
+                        }
+                    }
+                });
+            } catch (error) {
+                console.error('Error rendering charts:', error);
+            }
+        }
+
+        // ================================================================
+        //  PPIC
+        // ================================================================
+
+        function renderPPIC(el) {
+            let html = `
+            <div class="section-title">📋 PPIC - Input Batch</div>
+            <div class="section-subtitle">Masukkan batch number baru untuk memulai proses</div>
+
+            <div class="card mb-4">
+              <div class="tab-group" id="ppicTabs">
+                <button class="tab-btn active" data-tab="injeksi">💉 INJEKSI</button>
+                <button class="tab-btn" data-tab="oral">📋 ORAL</button>
+              </div>
+              <div id="ppicContent">
+                ${renderPPICContent('injeksi')}
+                ${renderPPICContent('oral')}
+              </div>
+            </div>
+          `;
+            el.innerHTML = html;
+
+            el.querySelectorAll('#ppicTabs .tab-btn').forEach(btn => {
+                btn.onclick = function() {
+                    el.querySelectorAll('#ppicTabs .tab-btn').forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    const tab = this.dataset.tab;
+                    el.querySelectorAll('#ppicContent > div').forEach(d => {
+                        d.style.display = d.dataset.varian === tab ? 'block' : 'none';
+                    });
+                };
+            });
+            el.querySelectorAll('#ppicContent > div').forEach((d, i) => {
+                d.style.display = i === 0 ? 'block' : 'none';
+            });
+
+            el.querySelectorAll('.btn-add').forEach(btn => {
+                btn.onclick = function() {
+                    const varian = this.dataset.varian;
+                    const input = this.closest('.ppic-group').querySelector('.batch-input');
+                    const val = input.value.trim();
+                    if (!val) { alert('Masukkan batch number!'); return; }
+                    if (data[varian].some(b => b.batchNumber === val)) { alert('Batch sudah ada!'); return; }
+                    const newBatch = createBatch(val, varian, 'PPIC');
+                    data[varian].push(newBatch);
+                    saveData();
+                    input.value = '';
+                    render();
+                };
+            });
+
+            // Tombol Mulai Proses di PPIC
+            el.querySelectorAll('.btn-start-process').forEach(btn => {
+                btn.onclick = function() {
+                    const varian = this.dataset.varian;
+                    const batchNumber = this.dataset.batch;
+                    const batch = data[varian].find(b => b.batchNumber === batchNumber);
+                    if (!batch) return;
+                    if (batch.status !== 'PPIC') {
+                        alert('Batch sudah diproses!');
+                        return;
+                    }
+                    // Pindah ke LOGISTIC
+                    batch.status = 'LOGISTIC';
+                    batch.currentStep = 0;
+                    batch.subProses = ['Timbang', 'Serah Terima'].map(name => ({
+                        name,
+                        status: 'BELUM',
+                        startTime: null,
+                        endTime: null,
+                        problem: ''
+                    }));
+                    batch.logistic.timbang = null;
+                    batch.logistic.serahTerima = null;
+                    saveData();
+                    render();
+                };
+            });
+        }
+
+        function renderPPICContent(varian) {
+            const label = varian === 'injeksi' ? 'INJEKSI' : 'ORAL';
+            const batches = data[varian] || [];
+            let list = '';
+            for (const b of batches) {
+                const isPPIC = b.status === 'PPIC';
+                list += `<div class="flex justify-between items-center border-b border-slate-100 py-1.5 px-1 text-sm">
+              <span class="font-medium">${b.batchNumber}</span>
+              <div class="flex items-center gap-2">
+                <span class="${getStatusBadge(b.status)}">${getStatusLabel(b.status)}</span>
+                ${isPPIC ? `<button class="btn btn-blue btn-sm btn-start-process" data-varian="${varian}" data-batch="${b.batchNumber}">▶ Mulai</button>` : ''}
+              </div>
+            </div>`;
+            }
+            if (!list) list = '<div class="empty-state">Belum ada batch</div>';
+            return `
+            <div data-varian="${varian}" style="display:none;" class="ppic-group">
+              <div class="flex flex-wrap gap-2 items-center mb-3">
+                <input type="text" class="input-text batch-input" placeholder="Batch number..." style="min-width:200px;" />
+                <button class="btn btn-primary btn-add" data-varian="${varian}">➕ Tambah ${label}</button>
+              </div>
+              <div class="border-t pt-2">
+                <div class="text-sm font-semibold text-slate-600 mb-1">📋 Daftar Batch ${label}</div>
+                ${list}
+              </div>
+            </div>
+          `;
+        }
+
+        // ================================================================
+        //  STAGE (LOGISTIC, PRODUKSI, QA)
+        // ================================================================
+
+        function renderStage(el, stage, title) {
+            const allBatches = [...data.injeksi, ...data.oral].filter(b => b.status === stage);
+            const selected = selectedBatch[stage] || null;
+
+            let options = '<option value="">-- Pilih Batch --</option>';
+            for (const b of allBatches) {
+                options += `<option value="${b.batchNumber}">${b.batchNumber} (${getVarianLabel(b.varian)})</option>`;
+            }
+
+            let html = `
+            <div class="section-title">${title}</div>
+            <div class="section-subtitle">Pilih batch untuk melihat dan melanjutkan proses</div>
+
+            <div class="card mb-4">
+              <div class="batch-select-container">
+                <label for="batchSelect_${stage}" style="font-weight:600;font-size:0.8rem;color:#475569;margin-right:0.5rem;">Pilih Batch:</label>
+                <select id="batchSelect_${stage}" class="input-select" onchange="onStageSelect('${stage}', this.value)">
+                  ${options}
+                </select>
+                ${allBatches.length === 0 ? '<div class="empty-state" style="padding:0.3rem 0;margin-top:0.3rem;">Tidak ada batch dengan status ini</div>' : ''}
+              </div>
+              <div class="detail-container" id="detailContainer_${stage}">
+                ${selected ? renderStageDetail(stage, selected) : '<div class="empty-state">👆 Pilih batch di atas untuk melihat detail</div>'}
+              </div>
+            </div>
+          `;
+            el.innerHTML = html;
+
+            const sel = document.getElementById(`batchSelect_${stage}`);
+            if (sel && selected) {
+                sel.value = selected;
+            }
+        }
+
+        window.onStageSelect = function(stage, batchNumber) {
+            selectedBatch[stage] = batchNumber;
+            const container = document.getElementById(`detailContainer_${stage}`);
+            if (container) {
+                if (batchNumber) {
+                    container.innerHTML = renderStageDetail(stage, batchNumber);
+                } else {
+                    container.innerHTML = '<div class="empty-state">👆 Pilih batch di atas untuk melihat detail</div>';
+                }
+            }
+        };
+
+        function renderStageDetail(stage, batchNumber) {
+            const allBatches = [...data.injeksi, ...data.oral];
+            const batch = allBatches.find(b => b.batchNumber === batchNumber);
+            if (!batch) return '<div class="empty-state">Batch tidak ditemukan</div>';
+
+            const varian = batch.varian;
+            const label = getVarianLabel(varian);
+
+            let subNames = [];
+            if (stage === 'LOGISTIC') {
+                subNames = ['Timbang', 'Serah Terima'];
+            } else if (stage === 'PRODUKSI') {
+                subNames = SUB_PROSES[varian] || SUB_PROSES.injeksi;
+            } else if (stage === 'QA') {
+                subNames = ['Release Finished Good'];
+            }
+
+            let steps = '';
+            if (stage === 'LOGISTIC' || stage === 'PRODUKSI') {
+                const currentStep = batch.currentStep || 0;
+                for (let i = 0; i < subNames.length; i++) {
+                    const sp = batch.subProses[i] || { name: subNames[i], status: 'BELUM', startTime: null, endTime: null,
+                        problem: '' };
+                    const isActive = (i === currentStep && batch.status === stage);
+                    const isDone = sp.status === 'DONE';
+                    const st = sp.status || 'BELUM';
+                    const cls = getStepClass(st);
+                    const dur = sp.startTime && sp.endTime ? formatDurationDays(daysDiff(sp.startTime, sp.endTime)) :
+                        sp.startTime && isActive ? formatDurationDays(daysDiff(sp.startTime, new Date().toISOString())) +
+                        ' (running)' :
+                        '-';
+
+                    const statusLabel = getStepStatusLabel(st);
+                    const statusClass = getStepStatusClass(st);
+                    const isDisabled = isDone;
+                    const showNext = isActive && !isDone;
+
+                    steps += `
+                <div class="step-box ${cls}">
+                  <div class="flex flex-wrap items-start justify-between gap-2">
+                    <div class="flex items-center gap-2 flex-wrap">
+                      <span class="font-medium text-sm">${i+1}. ${subNames[i]}</span>
+                      <span class="step-status-badge ${statusClass}">${statusLabel}</span>
+                      ${dur !== '-' ? `<span class="text-xs text-slate-400">⏱ ${dur} hari</span>` : ''}
+                    </div>
+                    <div class="flex flex-wrap items-center gap-2">
+                      <input type="text" class="input-text input-problem" 
+                             data-stage="${stage}"
+                             data-varian="${varian}" 
+                             data-batch="${batch.batchNumber}" 
+                             data-step="${i}" 
+                             value="${sp.problem || ''}" 
+                             placeholder="Problem..."
+                             style="max-width:200px;font-size:0.7rem;"
+                             ${isDisabled ? 'disabled' : ''} />
+                      ${showNext ? `<button class="btn btn-blue btn-next" 
+                                  data-stage="${stage}"
+                                  data-varian="${varian}" 
+                                  data-batch="${batch.batchNumber}" 
+                                  data-step="${i}">Next →</button>` : ''}
+                      ${st === 'PROBLEM' && !isActive && !isDone ? `<span class="text-xs text-red-600 font-semibold">⚠️ Problem</span>` : ''}
+                    </div>
+                  </div>
+                  ${sp.problem && !isDone ? `<div class="text-xs text-red-600 mt-0.5">📌 ${sp.problem}</div>` : ''}
+                  ${sp.problem && isDone ? `<div class="text-xs text-slate-400 mt-0.5">📌 ${sp.problem}</div>` : ''}
+                </div>
+              `;
+                }
+            } else if (stage === 'QA') {
+                const isActive = batch.status === 'QA';
+                const isDone = batch.status === 'DONE';
+                const st = isDone ? 'DONE' : (isActive ? 'ON PROGRESS' : 'BELUM');
+                const cls = getStepClass(st);
+                const releaseDate = batch.qa?.release;
+                const dur = releaseDate ? formatDurationDays(daysDiff(batch.createdAt, releaseDate)) : '-';
+                const statusLabel = getStepStatusLabel(st);
+                const statusClass = getStepStatusClass(st);
+
+                steps = `
+              <div class="step-box ${cls}">
+                <div class="flex flex-wrap items-start justify-between gap-2">
+                  <div class="flex items-center gap-2 flex-wrap">
+                    <span class="font-medium text-sm">1. Release Finished Good</span>
+                    <span class="step-status-badge ${statusClass}">${statusLabel}</span>
+                    ${dur !== '-' ? `<span class="text-xs text-slate-400">⏱ ${dur} hari</span>` : ''}
+                  </div>
+                  <div class="flex flex-wrap items-center gap-2">
+                    ${!isDone ? `<button class="btn btn-blue btn-next" 
+                                data-stage="${stage}"
+                                data-varian="${varian}" 
+                                data-batch="${batch.batchNumber}" 
+                                data-step="0">Release →</button>` : ''}
+                  </div>
+                </div>
+              </div>
+            `;
+            }
+
+            const pct = getPCTSite(batch, true);
+            const pctExcl = getPCTSite(batch, false);
+            const pctOnGoing = getPCTOnGoing(batch);
+            const targetPct = getTarget(batch, 'PCT_INC');
+            const targetPctExcl = getTarget(batch, 'PCT_EXCL');
+            const targetOngoing = getTarget(batch, 'PCT_ONGOING');
+
+            return `
+            <div class="batch-detail">
+              <div class="bg-slate-50 rounded-lg p-3">
+                <div class="flex justify-between items-center mb-2">
+                  <div>
+                    <span class="font-bold text-base">${batch.batchNumber}</span>
+                    <span class="text-xs ml-2 text-slate-500">${label}</span>
+                    <span class="ml-2 varian-badge ${getVarianBadge(varian)}">${label}</span>
+                  </div>
+                  <span class="${getStatusBadge(batch.status)}">${getStatusLabel(batch.status)}</span>
+                </div>
+
+                ${steps}
+
+                <div class="flex flex-wrap gap-3 mt-2 pt-2 border-t border-slate-200">
+                  <div>
+                    <span class="text-xs text-slate-500">PCT Site Inc Mikro</span>
+                    <div class="font-bold ${pct !== null && targetPct !== null && pct <= targetPct ? 'text-green-600' : pct !== null ? 'text-red-600' : 'text-slate-400'}">
+                      ${pct !== null ? pct.toFixed(2) + ' hari' : '-'}
+                      ${targetPct !== null ? `/ Target: ${targetPct} hari` : ''}
+                    </div>
+                  </div>
+                  <div>
+                    <span class="text-xs text-slate-500">PCT Site Excl Mikro</span>
+                    <div class="font-bold ${pctExcl !== null && targetPctExcl !== null && pctExcl <= targetPctExcl ? 'text-green-600' : pctExcl !== null ? 'text-red-600' : 'text-slate-400'}">
+                      ${pctExcl !== null ? pctExcl.toFixed(2) + ' hari' : '-'}
+                      ${targetPctExcl !== null ? `/ Target: ${targetPctExcl} hari` : ''}
+                    </div>
+                  </div>
+                  <div>
+                    <span class="text-xs text-slate-500">PCT On Going</span>
+                    <div class="font-bold ${pctOnGoing !== null && targetOngoing !== null && pctOnGoing <= targetOngoing ? 'text-green-600' : pctOnGoing !== null ? 'text-red-600' : 'text-slate-400'}">
+                      ${pctOnGoing !== null ? pctOnGoing.toFixed(2) + ' hari' : '-'}
+                      ${targetOngoing !== null ? `/ Target: ${targetOngoing} hari` : ''}
+                    </div>
+                  </div>
+                  <div>
+                    <span class="text-xs text-slate-500">Estimasi Rilis</span>
+                    <div class="font-bold text-slate-700">${batch.pct?.estRilis || '-'}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          `;
+        }
+
+        // ================================================================
+        //  QC (FIXED - Otomatis Pindah ke QA + Refresh Dropdown)
+        // ================================================================
+
+        function renderQC(el) {
+            const allBatches = [...data.injeksi, ...data.oral].filter(b => b.status === 'QC');
+            const selected = selectedBatch['QC'] || null;
+
+            let options = '<option value="">-- Pilih Batch --</option>';
+            for (const b of allBatches) {
+                options += `<option value="${b.batchNumber}">${b.batchNumber} (${getVarianLabel(b.varian)})</option>`;
+            }
+
+            let html = `
+            <div class="section-title">🔬 QC - Quality Control</div>
+            <div class="section-subtitle">Pilih batch untuk melihat dan melanjutkan proses QC</div>
+
+            <div class="card mb-4">
+              <div class="batch-select-container">
+                <label for="batchSelect_QC" style="font-weight:600;font-size:0.8rem;color:#475569;margin-right:0.5rem;">Pilih Batch:</label>
+                <select id="batchSelect_QC" class="input-select" onchange="onQCSelect(this.value)">
+                  ${options}
+                </select>
+                ${allBatches.length === 0 ? '<div class="empty-state" style="padding:0.3rem 0;margin-top:0.3rem;">Tidak ada batch dengan status QC</div>' : ''}
+              </div>
+              <div class="detail-container" id="detailContainer_QC">
+                ${selected ? renderQCDetail(selected) : '<div class="empty-state">👆 Pilih batch di atas untuk melihat detail</div>'}
+              </div>
+            </div>
+          `;
+            el.innerHTML = html;
+
+            const sel = document.getElementById('batchSelect_QC');
+            if (sel && selected) {
+                sel.value = selected;
+            }
+        }
+
+        window.onQCSelect = function(batchNumber) {
+            selectedBatch['QC'] = batchNumber;
+            const container = document.getElementById('detailContainer_QC');
+            if (container) {
+                if (batchNumber) {
+                    container.innerHTML = renderQCDetail(batchNumber);
+                } else {
+                    container.innerHTML = '<div class="empty-state">👆 Pilih batch di atas untuk melihat detail</div>';
+                }
+            }
+        };
+
+        function renderQCDetail(batchNumber) {
+            const allBatches = [...data.injeksi, ...data.oral];
+            const batch = allBatches.find(b => b.batchNumber === batchNumber);
+            if (!batch) return '<div class="empty-state">Batch tidak ditemukan</div>';
+
+            const varian = batch.varian;
+            const label = getVarianLabel(varian);
+            const subNames = QC_SUB[varian] || QC_SUB.injeksi;
+
+            let steps = '';
+            const currentStep = batch.currentStep || 0;
+            for (let i = 0; i < subNames.length; i++) {
+                const sp = batch.subProses[i] || { name: subNames[i], status: 'BELUM', startTime: null, endTime: null,
+                    problem: '' };
+                const isActive = (i === currentStep && batch.status === 'QC');
+                const isDone = sp.status === 'DONE';
+                const st = sp.status || 'BELUM';
+                const cls = getStepClass(st);
+                const dur = sp.startTime && sp.endTime ? formatDurationDays(daysDiff(sp.startTime, sp.endTime)) :
+                    sp.startTime && isActive ? formatDurationDays(daysDiff(sp.startTime, new Date().toISOString())) +
+                    ' (running)' :
+                    '-';
+
+                const statusLabel = getStepStatusLabel(st);
+                const statusClass = getStepStatusClass(st);
+                const isDisabled = isDone;
+                const showNext = isActive && !isDone;
+
+                steps += `
+              <div class="step-box ${cls}">
+                <div class="flex flex-wrap items-start justify-between gap-2">
+                  <div class="flex items-center gap-2 flex-wrap">
+                    <span class="font-medium text-sm">${i+1}. ${subNames[i]}</span>
+                    <span class="step-status-badge ${statusClass}">${statusLabel}</span>
+                    ${dur !== '-' ? `<span class="text-xs text-slate-400">⏱ ${dur} hari</span>` : ''}
+                  </div>
+                  <div class="flex flex-wrap items-center gap-2">
+                    <input type="text" class="input-text input-problem" 
+                           data-stage="QC"
+                           data-varian="${varian}" 
+                           data-batch="${batch.batchNumber}" 
+                           data-step="${i}" 
+                           value="${sp.problem || ''}" 
+                           placeholder="Problem..."
+                           style="max-width:200px;font-size:0.7rem;"
+                           ${isDisabled ? 'disabled' : ''} />
+                    ${showNext ? `<button class="btn btn-blue btn-next" 
+                                data-stage="QC"
+                                data-varian="${varian}" 
+                                data-batch="${batch.batchNumber}" 
+                                data-step="${i}">Next →</button>` : ''}
+                    ${st === 'PROBLEM' && !isActive && !isDone ? `<span class="text-xs text-red-600 font-semibold">⚠️ Problem</span>` : ''}
+                  </div>
+                </div>
+                ${sp.problem && !isDone ? `<div class="text-xs text-red-600 mt-0.5">📌 ${sp.problem}</div>` : ''}
+                ${sp.problem && isDone ? `<div class="text-xs text-slate-400 mt-0.5">📌 ${sp.problem}</div>` : ''}
+              </div>
+            `;
+            }
+
+            const qc = batch.qc || {};
+            const qcDur = getStageDuration(batch, 'QC');
+            const targetQC = getTarget(batch, 'QC');
+
+            const isOral = varian === 'oral';
+            let extraFields = '';
+            if (isOral) {
+                extraFields = `
+              <div class="stage-item">
+                <div class="stage-label">Analisa Kimia</div>
+                <div class="stage-value">${formatDateDisplay(qc.analisaKimia) || '-'}</div>
+              </div>
+              <div class="stage-item">
+                <div class="stage-label">Analisa Mikro</div>
+                <div class="stage-value">${formatDateDisplay(qc.analisaMikro) || '-'}</div>
+              </div>
+              <div class="stage-item">
+                <div class="stage-label">Selisih Mikro-Kimia</div>
+                <div class="stage-value">${qc.analisaKimia && qc.analisaMikro ? formatDurationDays(daysDiff(qc.analisaKimia, qc.analisaMikro)) : '-'}</div>
+              </div>
+            `;
+            } else {
+                extraFields = `
+              <div class="stage-item">
+                <div class="stage-label">Analisa Mikro</div>
+                <div class="stage-value">${formatDateDisplay(qc.analisaMikro) || '-'}</div>
+              </div>
+            `;
+            }
+
+            const pct = getPCTSite(batch, true);
+            const targetPct = getTarget(batch, 'PCT_INC');
+            const pctOnGoing = getPCTOnGoing(batch);
+            const targetOngoing = getTarget(batch, 'PCT_ONGOING');
+
+            return `
+            <div class="batch-detail">
+              <div class="bg-slate-50 rounded-lg p-3">
+                <div class="flex justify-between items-center mb-2">
+                  <div>
+                    <span class="font-bold text-base">${batch.batchNumber}</span>
+                    <span class="text-xs ml-2 text-slate-500">${label}</span>
+                    <span class="ml-2 varian-badge ${getVarianBadge(varian)}">${label}</span>
+                  </div>
+                  <span class="${getStatusBadge(batch.status)}">${getStatusLabel(batch.status)}</span>
+                </div>
+
+                ${steps}
+
+                <div class="stage-detail-grid mt-2">
+                  <div class="stage-item">
+                    <div class="stage-label">Terima Sample</div>
+                    <div class="stage-value">${formatDateDisplay(qc.terimaSample) || '-'}</div>
+                  </div>
+                  <div class="stage-item">
+                    <div class="stage-label">Estimasi LWS</div>
+                    <div class="stage-value">${qc.estimasiLWS || '-'}</div>
+                  </div>
+                  ${extraFields}
+                  <div class="stage-item">
+                    <div class="stage-label">Durasi QC</div>
+                    <div class="stage-value ${qcDur !== null && targetQC !== null && qcDur <= targetQC ? 'text-green-600' : qcDur !== null ? 'text-red-600' : 'text-slate-400'}">
+                      ${qcDur !== null ? qcDur.toFixed(2) + ' hari' : '-'}
+                      ${targetQC !== null ? `/ Target: ${targetQC} hari` : ''}
+                    </div>
+                  </div>
+                </div>
+
+                <div class="flex flex-wrap gap-3 mt-2 pt-2 border-t border-slate-200">
+                  <div>
+                    <span class="text-xs text-slate-500">PCT Site Inc Mikro</span>
+                    <div class="font-bold ${pct !== null && targetPct !== null && pct <= targetPct ? 'text-green-600' : pct !== null ? 'text-red-600' : 'text-slate-400'}">
+                      ${pct !== null ? pct.toFixed(2) + ' hari' : '-'}
+                      ${targetPct !== null ? `/ Target: ${targetPct} hari` : ''}
+                    </div>
+                  </div>
+                  <div>
+                    <span class="text-xs text-slate-500">PCT On Going</span>
+                    <div class="font-bold ${pctOnGoing !== null && targetOngoing !== null && pctOnGoing <= targetOngoing ? 'text-green-600' : pctOnGoing !== null ? 'text-red-600' : 'text-slate-400'}">
+                      ${pctOnGoing !== null ? pctOnGoing.toFixed(2) + ' hari' : '-'}
+                      ${targetOngoing !== null ? `/ Target: ${targetOngoing} hari` : ''}
+                    </div>
+                  </div>
+                  <div>
+                    <span class="text-xs text-slate-500">Estimasi Rilis</span>
+                    <div class="font-bold text-slate-700">${batch.pct?.estRilis || '-'}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          `;
+        }
+
+        // ================================================================
+        //  KANBAN
+        // ================================================================
+
+        function renderKanbanProduksi(el) {
+            const allBatches = [...data.injeksi, ...data.oral];
+            const activeBatches = allBatches.filter(b => b.status !== 'PPIC' && b.status !== 'DONE');
+
+            const availableBatches = activeBatches.filter(b => {
+                const hasWadah = kanbanRequests.some(k => k.batchNumber === b.batchNumber && k.type === 'WADAH');
+                const hasKemas = kanbanRequests.some(k => k.batchNumber === b.batchNumber && k.type === 'KEMAS');
+                return !(hasWadah && hasKemas);
+            });
+
+            let html = `
+            <div class="section-title">📦 Kanban - Permintaan Wadah/Kemas (Produksi)</div>
+            <div class="section-subtitle">Request wadah dan kemas untuk batch yang sedang berjalan</div>
+
+            <div class="card mb-4">
+              <div class="request-form">
+                <div class="form-group" style="min-width:180px;">
+                  <label>Pilih Batch</label>
+                  <select id="kanbanBatchSelect" class="input-select" style="min-width:180px;">
+                    <option value="">-- Pilih Batch --</option>
+                    ${availableBatches.map(b => `<option value="${b.batchNumber}">${b.batchNumber} (${getVarianLabel(b.varian)})</option>`).join('')}
+                  </select>
+                  ${availableBatches.length === 0 ? '<div class="text-xs text-slate-500 mt-0.5">✅ Semua batch sudah request WADAH + KEMAS</div>' : ''}
+                </div>
+                <div class="form-group">
+                  <label>📦 Wadah</label>
+                  <div class="form-row">
+                    <input type="text" id="wadahDate" class="input-date" value="${getCurrentDate()}" />
+                    <input type="text" id="wadahTime" class="input-time" value="${getCurrentTime()}" />
+                    <button class="btn btn-blue btn-sm" onclick="addKanbanRequest('WADAH')">Request</button>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label>📦 Kemas</label>
+                  <div class="form-row">
+                    <input type="text" id="kemasDate" class="input-date" value="${getCurrentDate()}" />
+                    <input type="text" id="kemasTime" class="input-time" value="${getCurrentTime()}" />
+                    <button class="btn btn-blue btn-sm" onclick="addKanbanRequest('KEMAS')">Request</button>
+                  </div>
+                </div>
+              </div>
+
+              <div id="kanbanList">
+                ${renderKanbanList('produksi')}
+              </div>
+            </div>
+          `;
+            el.innerHTML = html;
+        }
+
+        window.addKanbanRequest = function(type) {
+            const sel = document.getElementById('kanbanBatchSelect');
+            const batchNumber = sel.value;
+            if (!batchNumber) {
+                alert('Pilih batch terlebih dahulu!');
+                return;
+            }
+
+            const dateInput = type === 'WADAH' ? document.getElementById('wadahDate') : document.getElementById('kemasDate');
+            const timeInput = type === 'WADAH' ? document.getElementById('wadahTime') : document.getElementById('kemasTime');
+
+            const tanggal = dateInput.value || getCurrentDate();
+            const jam = timeInput.value || getCurrentTime();
+
+            // Validasi format tanggal DD-MM-YYYY
+            if (!/^\d{2}-\d{2}-\d{4}$/.test(tanggal)) {
+                alert('Format tanggal harus DD-MM-YYYY! Contoh: 15-07-2026');
+                return;
+            }
+
+            if (kanbanRequests.some(k => k.batchNumber === batchNumber && k.type === type)) {
+                alert(`Batch ini sudah pernah request ${type}!`);
+                return;
+            }
+
+            const allBatches = [...data.injeksi, ...data.oral];
+            const batch = allBatches.find(b => b.batchNumber === batchNumber);
+            if (!batch) {
+                alert('Batch tidak ditemukan!');
+                return;
+            }
+
+            const newRequest = {
+                id: Date.now() + Math.random() * 1000,
+                batchNumber: batchNumber,
+                varian: batch.varian,
+                type: type,
+                tanggal: tanggal,
+                jam: jam,
+                status: 'REQUESTED',
+                notes: ''
+            };
+
+            kanbanRequests.push(newRequest);
+            saveData();
+            render();
+        };
+
+        function renderKanbanLogistic(el) {
+            let html = `
+            <div class="section-title">📦 Kanban - Respon Wadah/Kemas (Logistic)</div>
+            <div class="section-subtitle">Respon permintaan wadah dan kemas dari produksi</div>
+
+            <div class="card mb-4">
+              <div id="kanbanList">
+                ${renderKanbanList('logistic')}
+              </div>
+            </div>
+          `;
+            el.innerHTML = html;
+        }
+
+        function renderKanbanList(role) {
+            if (kanbanRequests.length === 0) {
+                return '<div class="empty-state">Belum ada permintaan kanban</div>';
+            }
+
+            let cards = '';
+            const sorted = [...kanbanRequests].sort((a, b) => {
+                const order = { 'REQUESTED': 0, 'PROBLEM': 1, 'READY': 2 };
+                return (order[a.status] || 0) - (order[b.status] || 0);
+            });
+
+            for (const req of sorted) {
+                const isRequested = req.status === 'REQUESTED';
+                const isReady = req.status === 'READY';
+                const isProblem = req.status === 'PROBLEM';
+                const typeLabel = req.type === 'WADAH' ? '📦 Wadah' : '📦 Kemas';
+                const typeBadge = req.type === 'WADAH' ? 'badge-wadah' : 'badge-kemas';
+
+                let actions = '';
+                if (role === 'logistic') {
+                    if (isRequested) {
+                        actions = `
+                      <button class="btn btn-green btn-sm" onclick="updateKanbanStatus(${req.id}, 'READY')">✅ Ready</button>
+                      <button class="btn btn-red btn-sm" onclick="updateKanbanStatus(${req.id}, 'PROBLEM')">⚠️ Problem</button>
+                      <input type="text" class="input-text" id="notes_${req.id}" placeholder="Notes..." value="${req.notes || ''}" style="max-width:150px;font-size:0.7rem;" onchange="updateKanbanNotes(${req.id}, this.value)" />
+                    `;
+                    } else if (isProblem) {
+                        actions = `
+                      <button class="btn btn-green btn-sm" onclick="updateKanbanStatus(${req.id}, 'READY')">✅ Ready</button>
+                      <span class="text-xs text-red-600 font-semibold">⚠️ Problem</span>
+                      <input type="text" class="input-text" id="notes_${req.id}" placeholder="Notes..." value="${req.notes || ''}" style="max-width:150px;font-size:0.7rem;" onchange="updateKanbanNotes(${req.id}, this.value)" />
+                    `;
+                    } else if (isReady) {
+                        actions = `
+                      <span class="text-xs text-green-600 font-semibold">✅ Siap</span>
+                      ${req.notes ? `<span class="text-xs text-slate-500">📌 ${req.notes}</span>` : ''}
+                    `;
+                    }
+                } else {
+                    // Produksi role
+                    if (isReady) {
+                        actions = `<span class="text-xs text-green-600 font-semibold">✅ Siap - ${req.notes || ''}</span>`;
+                    } else if (isProblem) {
+                        actions = `<span class="text-xs text-red-600 font-semibold">⚠️ Problem - ${req.notes || ''}</span>`;
+                    } else {
+                        actions = `<span class="text-xs text-yellow-600 font-semibold">⏳ Menunggu Respon</span>`;
+                    }
+                }
+
+                const statusBadge = getKanbanStatusBadge(req.status);
+                const statusLabel = getKanbanStatusLabel(req.status);
+
+                cards += `
+              <div class="kanban-card">
+                <div class="kanban-info">
+                  <div>
+                    <span class="label">Batch</span>
+                    <div class="value">${req.batchNumber}</div>
+                  </div>
+                  <div>
+                    <span class="label">Varian</span>
+                    <div class="value"><span class="varian-badge ${getVarianBadge(req.varian)}">${getVarianLabel(req.varian)}</span></div>
+                  </div>
+                  <div>
+                    <span class="label">Type</span>
+                    <div class="value"><span class="badge-type ${typeBadge}">${typeLabel}</span></div>
+                  </div>
+                  <div>
+                    <span class="label">Tanggal</span>
+                    <div class="value">${req.tanggal}</div>
+                  </div>
+                  <div>
+                    <span class="label">Jam</span>
+                    <div class="value">${req.jam}</div>
+                  </div>
+                  <div>
+                    <span class="label">Status</span>
+                    <div class="value"><span class="${statusBadge}">${statusLabel}</span></div>
+                  </div>
+                </div>
+                <div class="kanban-actions">
+                  ${actions}
+                  ${role === 'logistic' ? `<button class="btn btn-gray btn-xs" onclick="deleteKanban(${req.id})">✕</button>` : ''}
+                </div>
+                ${req.notes && role === 'logistic' && isReady ? `<div class="kanban-notes ready">📌 ${req.notes}</div>` : ''}
+                ${req.notes && role === 'logistic' && isProblem ? `<div class="kanban-notes">📌 ${req.notes}</div>` : ''}
+              </div>
+            `;
+            }
+
+            return cards;
+        }
+
+        window.updateKanbanStatus = function(id, status) {
+            const req = kanbanRequests.find(k => k.id === id);
+            if (req) {
+                req.status = status;
+                saveData();
+                render();
+            }
+        };
+
+        window.updateKanbanNotes = function(id, notes) {
+            const req = kanbanRequests.find(k => k.id === id);
+            if (req) {
+                req.notes = notes;
+                saveData();
+            }
+        };
+
+        window.deleteKanban = function(id) {
+            if (confirm('Hapus permintaan ini?')) {
+                kanbanRequests = kanbanRequests.filter(k => k.id !== id);
+                saveData();
+                render();
+            }
+        };
+
+        // ================================================================
+        //  EVENTS (FIXED - QC → QA + Dropdown Refresh)
+        // ================================================================
+
+        function setupEvents() {
+            document.addEventListener('click', function(e) {
+                const btn = e.target.closest('.btn-next');
+                if (!btn) return;
+
+                const varian = btn.dataset.varian;
+                const batchNumber = btn.dataset.batch;
+                const stepIndex = parseInt(btn.dataset.step);
+                const stage = btn.dataset.stage;
+
+                let batch = null;
+                if (data[varian]) {
+                    batch = data[varian].find(b => b.batchNumber === batchNumber);
+                }
+                if (!batch) {
+                    alert('Batch tidak ditemukan!');
+                    return;
+                }
+
+                // ===== QA SPECIAL =====
+                if (stage === 'QA') {
+                    if (batch.status === 'DONE') {
+                        alert('Batch sudah release!');
+                        return;
+                    }
+                    if (batch.status !== 'QA') {
+                        alert('Batch belum siap untuk release!');
+                        return;
+                    }
+                    batch.qa.release = new Date().toISOString();
+                    batch.status = 'DONE';
+                    if (!batch.subProses || batch.subProses.length === 0) {
+                        batch.subProses = [{ name: 'Release Finished Good', status: 'DONE', startTime: batch.qa
+                                .release, endTime: batch.qa.release, problem: '' }];
+                    } else {
+                        batch.subProses[0] = { name: 'Release Finished Good', status: 'DONE', startTime: batch.qa
+                                .release, endTime: batch.qa.release, problem: batch.subProses[0]?.problem ||
+                            '' };
+                    }
+                    batch.currentStep = 0;
+                    saveData();
+                    render();
+                    return;
+                }
+
+                // ===== QC SPECIAL (FIXED!) =====
+                if (stage === 'QC') {
+                    // Pastikan subProses ada
+                    if (!batch.subProses || batch.subProses.length === 0) {
+                        const subNames = QC_SUB[batch.varian] || QC_SUB.injeksi;
+                        batch.subProses = subNames.map(name => ({ name, status: 'BELUM', startTime: null,
+                            endTime: null, problem: '' }));
+                    }
+
+                    const step = batch.subProses[stepIndex];
+                    if (!step) {
+                        alert('Step tidak ditemukan!');
+                        return;
+                    }
+                    if (step.status === 'DONE') {
+                        alert('Step sudah selesai!');
+                        return;
+                    }
+
+                    // Set end time
+                    step.endTime = new Date().toISOString();
+                    step.status = 'DONE';
+
+                    // Update GSheet QC fields
+                    const stepName = step.name;
+                    if (stepName === 'Terima Sample') {
+                        batch.qc.terimaSample = step.startTime;
+                    } else if (stepName === 'Analisa Kimia') {
+                        batch.qc.analisaKimia = step.endTime;
+                    } else if (stepName === 'Analisa Mikro') {
+                        batch.qc.analisaMikro = step.endTime;
+                    } else if (stepName === 'Release Sample') {
+                        batch.qc.releaseSample = step.endTime;
+                    }
+
+                    const nextIdx = stepIndex + 1;
+                    if (nextIdx < batch.subProses.length) {
+                        // Masih ada step berikutnya di QC
+                        const nextStep = batch.subProses[nextIdx];
+                        nextStep.status = 'ON PROGRESS';
+                        nextStep.startTime = new Date().toISOString();
+                        batch.currentStep = nextIdx;
+                    } else {
+                        // SEMUA STEP QC SELESAI → PINDAH KE QA
+                        batch.currentStep = 0;
+                        batch.status = 'QA';
+
+                        // Reset subProses untuk QA
+                        batch.subProses = [{ name: 'Release Finished Good', status: 'BELUM', startTime: null,
+                            endTime: null, problem: '' }];
+
+                        // Set qa.release = null (belum release)
+                        batch.qa.release = null;
+
+                        // Hapus selected batch dari QC
+                        selectedBatch['QC'] = null;
+                    }
+
+                    saveData();
+
+                    // Refresh dropdown QC
+                    const selQC = document.getElementById('batchSelect_QC');
+                    if (selQC) {
+                        const allBatches = [...data.injeksi, ...data.oral].filter(b => b.status === 'QC');
+                        selQC.innerHTML = '<option value="">-- Pilih Batch --</option>' +
+                            allBatches.map(b =>
+                                `<option value="${b.batchNumber}">${b.batchNumber} (${getVarianLabel(b.varian)})</option>`
+                                ).join('');
+                        // Kosongkan selection
+                        selQC.value = '';
+                    }
+
+                    // Refresh tampilan
+                    render();
+                    return;
+                }
+
+                // ===== LOGISTIC & PRODUKSI =====
+                if (!batch.subProses || batch.subProses.length === 0) {
+                    const subNames = (stage === 'LOGISTIC') ? ['Timbang', 'Serah Terima'] :
+                        (SUB_PROSES[batch.varian] || SUB_PROSES.injeksi);
+                    batch.subProses = subNames.map(name => ({ name, status: 'BELUM', startTime: null, endTime: null,
+                        problem: '' }));
+                }
+
+                const step = batch.subProses[stepIndex];
+                if (!step) {
+                    alert('Step tidak ditemukan!');
+                    return;
+                }
+                if (step.status === 'DONE') {
+                    alert('Step sudah selesai!');
+                    return;
+                }
+
+                step.endTime = new Date().toISOString();
+                step.status = 'DONE';
+
+                if (stage === 'LOGISTIC') {
+                    if (step.name === 'Timbang') {
+                        batch.logistic.timbang = step.startTime;
+                    } else if (step.name === 'Serah Terima') {
+                        batch.logistic.serahTerima = step.endTime;
+                    }
+                } else if (stage === 'PRODUKSI') {
+                    const subNames = SUB_PROSES[batch.varian] || SUB_PROSES.injeksi;
+                    if (step.name === subNames[0]) {
+                        batch.produksi.bpp = step.startTime;
+                    }
+                    if (step.name === subNames[subNames.length - 1]) {
+                        batch.produksi.kirimDok = step.endTime;
+                    }
+                }
+
+                const nextIdx = stepIndex + 1;
+                if (nextIdx < batch.subProses.length) {
+                    const nextStep = batch.subProses[nextIdx];
+                    nextStep.status = 'ON PROGRESS';
+                    nextStep.startTime = new Date().toISOString();
+                    batch.currentStep = nextIdx;
+                } else {
+                    batch.currentStep = 0;
+                    const nextStatus = getNextStage(batch.status);
+                    batch.status = nextStatus;
+
+                    if (nextStatus === 'PRODUKSI') {
+                        const subNames = SUB_PROSES[batch.varian] || SUB_PROSES.injeksi;
+                        batch.subProses = subNames.map(name => ({ name, status: 'BELUM', startTime: null,
+                            endTime: null, problem: '' }));
+                    } else if (nextStatus === 'QC') {
+                        const subNames = QC_SUB[batch.varian] || QC_SUB.injeksi;
+                        batch.subProses = subNames.map(name => ({ name, status: 'BELUM', startTime: null,
+                            endTime: null, problem: '' }));
+                    } else if (nextStatus === 'QA') {
+                        batch.subProses = [{ name: 'Release Finished Good', status: 'BELUM', startTime: null,
+                            endTime: null, problem: '' }];
+                    }
+                }
+
+                saveData();
+
+                const sel = document.getElementById(`batchSelect_${stage}`);
+                if (sel) sel.value = batchNumber;
+                if (stage === 'QC') {
+                    const selQC = document.getElementById('batchSelect_QC');
+                    if (selQC) selQC.value = batchNumber;
+                }
+
+                render();
+            });
+
+            // FIXED: Gunakan event 'change' untuk mencegah terlalu sensitif
+            document.addEventListener('change', function(e) {
+                const inp = e.target.closest('.input-problem');
+                if (!inp || inp.disabled) return;
+
+                const varian = inp.dataset.varian;
+                const batchNumber = inp.dataset.batch;
+                const stepIndex = parseInt(inp.dataset.step);
+                const stage = inp.dataset.stage;
+
+                let batch = null;
+                if (data[varian]) {
+                    batch = data[varian].find(b => b.batchNumber === batchNumber);
+                }
+                if (!batch) return;
+
+                if (!batch.subProses || batch.subProses.length === 0) return;
+                const step = batch.subProses[stepIndex];
+                if (!step || step.status === 'DONE') return;
+
+                step.problem = inp.value;
+
+                if (stage === 'LOGISTIC') {
+                    batch.logistic.keterangan = inp.value;
+                } else if (stage === 'PRODUKSI') {
+                    batch.produksi.keterangan = inp.value;
+                } else if (stage === 'QC') {
+                    batch.qc.keterangan = inp.value;
+                } else if (stage === 'QA') {
+                    batch.qa.keterangan = inp.value;
+                }
+
+                if (inp.value.trim().length > 0 && step.status !== 'DONE') {
+                    step.status = 'PROBLEM';
+                } else if (inp.value.trim().length === 0 && step.status === 'PROBLEM') {
+                    step.status = 'ON PROGRESS';
+                }
+
+                saveData();
+
+                const stepBox = inp.closest('.step-box');
+                if (stepBox) {
+                    const statusBadge = stepBox.querySelector('.step-status-badge');
+                    if (statusBadge) {
+                        const st = step.status || 'BELUM';
+                        statusBadge.textContent = getStepStatusLabel(st);
+                        statusBadge.className = `step-status-badge ${getStepStatusClass(st)}`;
+                    }
+                    stepBox.className = `step-box ${getStepClass(step.status)}`;
+
+                    let problemDiv = stepBox.querySelector('.text-red-600.mt-0\\.5');
+                    if (step.problem && step.status !== 'DONE') {
+                        if (!problemDiv) {
+                            problemDiv = document.createElement('div');
+                            problemDiv.className = 'text-xs text-red-600 mt-0.5';
+                            stepBox.appendChild(problemDiv);
+                        }
+                        problemDiv.textContent = '📌 ' + step.problem;
+                    } else {
+                        if (problemDiv) problemDiv.remove();
+                    }
+                }
+            });
+        }
+
+        // ================================================================
+        //  NAVIGATION
+        // ================================================================
+
+        document.querySelectorAll('.nav-btn').forEach(btn => {
+            btn.onclick = function() {
+                currentPage = this.dataset.page;
+                render();
+            };
+        });
+
+        // ================================================================
+        //  INIT
+        // ================================================================
+
+        setupEvents();
+        render();
+        console.log('✅ GOF Dashboard v3 - Dengan Timeline Visual!');
+        console.log('📦 Total Batch:', data.injeksi.length + data.oral.length);
+        console.log('📦 Kanban Requests:', kanbanRequests.length);
+        console.log('📋 ORAL:', data.oral.length, 'batch');
+        console.log('💉 INJEKSI:', data.injeksi.length, 'batch');
+        console.log('🎯 Timeline: Hijau=Done, Merah=On Going, Abu=Menunggu');
+        console.log('💡 Hover untuk lihat tooltip problem!');
+    </script>
+
+</body>
+</html>

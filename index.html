@@ -1101,25 +1101,6 @@
             }
         }
 
-        /* ===== STATS RING ===== */
-        .stats-ring {
-            display: flex;
-            gap: 1.5rem;
-            flex-wrap: wrap;
-        }
-        .stats-ring .ring-item {
-            text-align: center;
-        }
-        .stats-ring .ring-item .ring-value {
-            font-size: 1.2rem;
-            font-weight: 700;
-        }
-        .stats-ring .ring-item .ring-label {
-            font-size: 0.6rem;
-            color: #94a3b8;
-            text-transform: uppercase;
-        }
-
         @media (max-width: 768px) {
             .sidebar {
                 width: 56px;
@@ -1184,12 +1165,6 @@
                 height: 22px;
                 font-size: 0.45rem;
             }
-            .stats-ring {
-                gap: 0.8rem;
-            }
-            .stats-ring .ring-item .ring-value {
-                font-size: 1rem;
-            }
         }
     </style>
 </head>
@@ -1197,7 +1172,7 @@
 
     <!-- ===== SIDEBAR ===== -->
     <div class="sidebar" id="sidebar">
-        <div class="logo">🏭 PCT<span>v4</span></div>
+        <div class="logo">🏭 PCT<span>v5</span></div>
         <div class="nav-group-label">📊 Monitoring</div>
         <button class="nav-btn active" data-page="dashboard"><span class="icon">📊</span> Dashboard</button>
         <div class="nav-group-label">📋 Planning</div>
@@ -1236,9 +1211,13 @@
             oral: ['Terima Sample', 'Analisa Kimia', 'Analisa Mikro', 'Release Sample']
         };
 
-        const STAGES = ['PPIC', 'LOGISTIC', 'PRODUKSI', 'QC', 'QA', 'DONE'];
+        // ALUR PRODUKSI YANG BENAR:
+        // PPIC -> KANBAN_PRODUKSI (request) -> KANBAN_LOGISTIC (respon) -> LOGISTIC -> PRODUKSI -> QC -> QA -> DONE
+        const STAGES = ['PPIC', 'KANBAN_PRODUKSI', 'KANBAN_LOGISTIC', 'LOGISTIC', 'PRODUKSI', 'QC', 'QA', 'DONE'];
         const STAGE_LABELS = {
             'PPIC': '📋 PPIC',
+            'KANBAN_PRODUKSI': '📦 Kanban (Request)',
+            'KANBAN_LOGISTIC': '📦 Kanban (Respon)',
             'LOGISTIC': '🚚 Logistic',
             'PRODUKSI': '🏭 Produksi',
             'QC': '🔬 QC',
@@ -1247,6 +1226,8 @@
         };
         const STAGE_ICONS = {
             'PPIC': '📋',
+            'KANBAN_PRODUKSI': '📦',
+            'KANBAN_LOGISTIC': '📦',
             'LOGISTIC': '🚚',
             'PRODUKSI': '🏭',
             'QC': '🔬',
@@ -1288,6 +1269,8 @@
                 status,
                 currentStep: 0,
                 createdAt: now,
+                // Status kanban: 'WAITING_WADAH', 'WAITING_KEMAS', 'READY', 'PROBLEM'
+                kanbanStatus: 'WAITING_WADAH',
                 subProses: subNames.map(name => ({ name, status: 'BELUM', startTime: null, endTime: null, problem: '' })),
                 bulan: '',
                 kode: '',
@@ -1299,7 +1282,7 @@
                 pct: { site: null, incMikro: null, exclMikro: null, onGoing: null, estRilis: null, estPCT: null },
                 keterangan: '',
                 lastUpdated: now,
-                history: [{ action: 'Created', timestamp: now, note: `Batch ${batchNumber} dibuat` }]
+                history: [{ action: 'Created', timestamp: now, note: `Batch ${batchNumber} dibuat di PPIC` }]
             };
         }
 
@@ -1365,7 +1348,7 @@
             const defaultData = getDefaultData();
             try {
                 if (storageOk) {
-                    const saved = localStorage.getItem('pct_data_v4');
+                    const saved = localStorage.getItem('pct_data_v5');
                     if (saved) {
                         const parsed = JSON.parse(saved);
                         if (parsed.injeksi && parsed.oral) {
@@ -1396,7 +1379,7 @@
         function saveData() {
             if (storageOk) {
                 try {
-                    localStorage.setItem('pct_data_v4', JSON.stringify({ ...data, kanban: kanbanRequests }));
+                    localStorage.setItem('pct_data_v5', JSON.stringify({ ...data, kanban: kanbanRequests }));
                 } catch (_) { console.warn('Failed to save data'); }
             }
         }
@@ -1484,6 +1467,8 @@
         function getStatusBadge(status) {
             const map = {
                 'PPIC': 'badge-ppic',
+                'KANBAN_PRODUKSI': 'badge-logistic',
+                'KANBAN_LOGISTIC': 'badge-logistic',
                 'LOGISTIC': 'badge-logistic',
                 'PRODUKSI': 'badge-produksi',
                 'QC': 'badge-qc',
@@ -1495,7 +1480,7 @@
 
         function getStatusLabel(status) {
             if (status === 'DONE') return '✅ DONE';
-            return status;
+            return STAGE_LABELS[status] || status;
         }
 
         function getVarianLabel(varian) {
@@ -1663,6 +1648,14 @@
             else if (stage === 'PRODUKSI') problem = batch.produksi?.keterangan || '';
             else if (stage === 'QC') problem = batch.qc?.keterangan || '';
             else if (stage === 'QA') problem = batch.qa?.keterangan || '';
+            else if (stage === 'KANBAN_PRODUKSI' || stage === 'KANBAN_LOGISTIC') {
+                const hasWadah = kanbanRequests.some(k => k.batchNumber === batch.batchNumber && k.type === 'WADAH' && k
+                    .status === 'READY');
+                const hasKemas = kanbanRequests.some(k => k.batchNumber === batch.batchNumber && k.type === 'KEMAS' && k
+                    .status === 'READY');
+                if (!hasWadah) problem = 'Menunggu wadah';
+                else if (!hasKemas) problem = 'Menunggu kemas';
+            }
 
             const dur = getStageDuration(batch, stage);
             const durStr = dur !== null ? ` (${dur.toFixed(2)} hari)` : '';
@@ -1752,7 +1745,6 @@
                 }
             }
 
-            // Cek apakah ada data
             const hasData = allBatches.length > 0;
 
             let html = `
@@ -1894,7 +1886,7 @@
                     chartStageDist = null; }
                 const labels = STAGES.map(s => STAGE_LABELS[s]);
                 const data = STAGES.map(s => stageCounts[s] || 0);
-                const colors = ['#94a3b8', '#fef9c3', '#dbeafe', '#d1fae5', '#ede9fe', '#bbf7d0'];
+                const colors = ['#94a3b8', '#fef9c3', '#fef9c3', '#dbeafe', '#d1fae5', '#ede9fe', '#bbf7d0', '#bbf7d0'];
 
                 if (data.some(v => v > 0)) {
                     chartStageDist = new Chart(ctx1, {
@@ -1986,9 +1978,8 @@
                 return { ...b, pct, target, progress };
             });
 
-            const timelineStages = ['LOGISTIC', 'PRODUKSI', 'QC', 'QA'];
+            const timelineStages = ['KANBAN_PRODUKSI', 'KANBAN_LOGISTIC', 'LOGISTIC', 'PRODUKSI', 'QC', 'QA'];
 
-            // Cek apakah ada data
             const hasData = allBatches.length > 0;
 
             let html = `
@@ -2071,7 +2062,7 @@
                         ${timelineStages.map(stage => {
                           const stageStatus = getStageStatus(b, stage);
                           const tooltip = getStageTooltip(b, stage);
-                          const stageLabel = stage.charAt(0) + stage.slice(1).toLowerCase();
+                          const stageLabel = stage.replace('KANBAN_', '').toLowerCase();
                           let dotClass = 'stage-dot';
                           if (stageStatus === 'done') dotClass += ' done';
                           else if (stageStatus === 'active') dotClass += ' active';
@@ -2208,6 +2199,8 @@
                 ${onGoingWithProgress.map(b => {
                   const pctOnGoing = b.pct;
                   const statusMap = {
+                    'KANBAN_PRODUKSI': '📦 Kanban (Request)',
+                    'KANBAN_LOGISTIC': '📦 Kanban (Respon)',
                     'LOGISTIC': '🚚 Logistic',
                     'PRODUKSI': '🏭 Produksi',
                     'QC': '🔬 QC',
@@ -2413,6 +2406,22 @@
                 ).join('');
             }
 
+            // Cek status kanban
+            let kanbanStatusHtml = '';
+            if (batch.status === 'KANBAN_PRODUKSI' || batch.status === 'KANBAN_LOGISTIC') {
+                const hasWadah = kanbanRequests.some(k => k.batchNumber === batch.batchNumber && k.type === 'WADAH' && k
+                    .status === 'READY');
+                const hasKemas = kanbanRequests.some(k => k.batchNumber === batch.batchNumber && k.type === 'KEMAS' && k
+                    .status === 'READY');
+                kanbanStatusHtml = `
+                <div class="flex flex-wrap gap-2 mt-2 p-2 bg-slate-100 rounded-lg">
+                  <span class="text-xs font-semibold">📦 Kanban Status:</span>
+                  <span class="text-xs ${hasWadah ? 'text-green-600' : 'text-yellow-600'}">Wadah: ${hasWadah ? '✅ Ready' : '⏳ Menunggu'}</span>
+                  <span class="text-xs ${hasKemas ? 'text-green-600' : 'text-yellow-600'}">Kemas: ${hasKemas ? '✅ Ready' : '⏳ Menunggu'}</span>
+                </div>
+              `;
+            }
+
             const detailHtml = `
             <div style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:999;display:flex;align-items:center;justify-content:center;animation:fadeIn 0.2s ease;" onclick="if(event.target===this) this.remove()">
               <div style="background:white;border-radius:16px;padding:24px;max-width:600px;width:90%;max-height:80vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.3);">
@@ -2426,6 +2435,8 @@
                   </div>
                   <button onclick="this.closest('div[style*=\"position:fixed\"]').remove()" style="background:none;border:none;font-size:1.5rem;cursor:pointer;color:#94a3b8;">✕</button>
                 </div>
+
+                ${kanbanStatusHtml}
 
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 0;padding:12px;background:#f8fafc;border-radius:8px;">
                   <div><span class="text-xs text-slate-500">PCT Inc Mikro</span><div class="font-bold">${pctInc !== null ? pctInc.toFixed(2) + ' hari' : '-'}</div></div>
@@ -2506,6 +2517,7 @@
                 };
             });
 
+            // START PPIC -> KANBAN_PRODUKSI (bukan langsung LOGISTIC!)
             el.querySelectorAll('.btn-start-process').forEach(btn => {
                 btn.onclick = function() {
                     const varian = this.dataset.varian;
@@ -2516,21 +2528,12 @@
                         showToast('Batch sudah diproses!', 'warning');
                         return;
                     }
-                    batch.status = 'LOGISTIC';
-                    batch.currentStep = 0;
-                    batch.subProses = ['Timbang', 'Serah Terima'].map(name => ({
-                        name,
-                        status: 'BELUM',
-                        startTime: null,
-                        endTime: null,
-                        problem: ''
-                    }));
-                    batch.logistic.timbang = null;
-                    batch.logistic.serahTerima = null;
+                    batch.status = 'KANBAN_PRODUKSI';
+                    batch.kanbanStatus = 'WAITING_WADAH';
                     batch.history.push({ action: 'Started', timestamp: new Date().toISOString(),
-                        note: `Batch dipindahkan ke LOGISTIC` });
+                        note: `Batch dipindahkan ke KANBAN_PRODUKSI - menunggu wadah` });
                     saveData();
-                    showToast(`▶️ Batch ${batchNumber} dimulai`, 'info');
+                    showToast(`▶️ Batch ${batchNumber} masuk ke Kanban (menunggu wadah)`, 'info');
                     render();
                 };
             });
@@ -3006,9 +3009,13 @@
         //  KANBAN
         // ================================================================
 
+        // KANBAN PRODUKSI - REQUEST WADAH & KEMAS
         function renderKanbanProduksi(el) {
+            // Batch yang bisa request: status KANBAN_PRODUKSI atau KANBAN_LOGISTIC
             const allBatches = [...data.injeksi, ...data.oral];
-            const activeBatches = allBatches.filter(b => b.status !== 'PPIC' && b.status !== 'DONE');
+            const activeBatches = allBatches.filter(b =>
+                b.status === 'KANBAN_PRODUKSI' || b.status === 'KANBAN_LOGISTIC'
+            );
 
             const availableBatches = activeBatches.filter(b => {
                 const hasWadah = kanbanRequests.some(k => k.batchNumber === b.batchNumber && k.type === 'WADAH');
@@ -3018,7 +3025,7 @@
 
             let html = `
             <div class="section-title">📦 Kanban - Permintaan Wadah/Kemas (Produksi)</div>
-            <div class="section-subtitle">Request wadah dan kemas untuk batch yang sedang berjalan</div>
+            <div class="section-subtitle">Request wadah dan kemas untuk batch yang siap produksi</div>
 
             <div class="card mb-4">
               <div class="request-form">
@@ -3026,7 +3033,7 @@
                   <label>Pilih Batch</label>
                   <select id="kanbanBatchSelect" class="input-select" style="min-width:180px;">
                     <option value="">-- Pilih Batch --</option>
-                    ${availableBatches.map(b => `<option value="${b.batchNumber}">${b.batchNumber} (${getVarianLabel(b.varian)})</option>`).join('')}
+                    ${availableBatches.map(b => `<option value="${b.batchNumber}">${b.batchNumber} (${getVarianLabel(b.varian)}) [${b.status}]</option>`).join('')}
                   </select>
                   ${availableBatches.length === 0 ? '<div class="text-xs text-slate-500 mt-0.5">✅ Semua batch sudah request WADAH + KEMAS</div>' : ''}
                 </div>
@@ -3087,6 +3094,12 @@
                 return;
             }
 
+            // Cek apakah batch sudah di status yang tepat
+            if (batch.status !== 'KANBAN_PRODUKSI' && batch.status !== 'KANBAN_LOGISTIC') {
+                showToast('Batch harus di status KANBAN_PRODUKSI atau KANBAN_LOGISTIC!', 'warning');
+                return;
+            }
+
             const newRequest = {
                 id: Date.now() + Math.random() * 1000,
                 batchNumber: batchNumber,
@@ -3101,9 +3114,47 @@
             kanbanRequests.push(newRequest);
             saveData();
             showToast(`✅ Request ${type} untuk ${batchNumber} berhasil`, 'success');
+
+            // Cek apakah sudah lengkap (WADAH + KEMAS)
+            checkKanbanComplete(batchNumber);
             render();
         };
 
+        // Fungsi untuk cek apakah WADAH dan KEMAS sudah ready
+        function checkKanbanComplete(batchNumber) {
+            const hasWadahReady = kanbanRequests.some(k =>
+                k.batchNumber === batchNumber && k.type === 'WADAH' && k.status === 'READY'
+            );
+            const hasKemasReady = kanbanRequests.some(k =>
+                k.batchNumber === batchNumber && k.type === 'KEMAS' && k.status === 'READY'
+            );
+
+            if (hasWadahReady && hasKemasReady) {
+                const allBatches = [...data.injeksi, ...data.oral];
+                const batch = allBatches.find(b => b.batchNumber === batchNumber);
+                if (batch && (batch.status === 'KANBAN_PRODUKSI' || batch.status === 'KANBAN_LOGISTIC')) {
+                    // Pindahkan ke LOGISTIC
+                    batch.status = 'LOGISTIC';
+                    batch.currentStep = 0;
+                    batch.subProses = ['Timbang', 'Serah Terima'].map(name => ({
+                        name,
+                        status: 'BELUM',
+                        startTime: null,
+                        endTime: null,
+                        problem: ''
+                    }));
+                    batch.logistic.timbang = null;
+                    batch.logistic.serahTerima = null;
+                    batch.history.push({ action: 'Kanban Complete', timestamp: new Date().toISOString(),
+                        note: `Wadah dan Kemas ready, pindah ke LOGISTIC` });
+                    saveData();
+                    showToast(`✅ ${batchNumber} - Wadah dan Kemas ready! Pindah ke LOGISTIC`, 'success');
+                    render();
+                }
+            }
+        }
+
+        // KANBAN LOGISTIC - RESPON WADAH & KEMAS
         function renderKanbanLogistic(el) {
             let html = `
             <div class="section-title">📦 Kanban - Respon Wadah/Kemas (Logistic)</div>
@@ -3140,13 +3191,13 @@
                 if (role === 'logistic') {
                     if (isRequested) {
                         actions = `
-                      <button class="btn btn-green btn-sm" onclick="updateKanbanStatus(${req.id}, 'READY')">✅ Ready</button>
-                      <button class="btn btn-red btn-sm" onclick="updateKanbanStatus(${req.id}, 'PROBLEM')">⚠️ Problem</button>
+                      <button class="btn btn-green btn-sm" onclick="responseKanban(${req.id}, 'READY')">✅ Ready</button>
+                      <button class="btn btn-red btn-sm" onclick="responseKanban(${req.id}, 'PROBLEM')">⚠️ Problem</button>
                       <input type="text" class="input-text" id="notes_${req.id}" placeholder="Notes..." value="${req.notes || ''}" style="max-width:150px;font-size:0.7rem;" onchange="updateKanbanNotes(${req.id}, this.value)" />
                     `;
                     } else if (isProblem) {
                         actions = `
-                      <button class="btn btn-green btn-sm" onclick="updateKanbanStatus(${req.id}, 'READY')">✅ Ready</button>
+                      <button class="btn btn-green btn-sm" onclick="responseKanban(${req.id}, 'READY')">✅ Ready</button>
                       <span class="text-xs text-red-600 font-semibold">⚠️ Problem</span>
                       <input type="text" class="input-text" id="notes_${req.id}" placeholder="Notes..." value="${req.notes || ''}" style="max-width:150px;font-size:0.7rem;" onchange="updateKanbanNotes(${req.id}, this.value)" />
                     `;
@@ -3157,6 +3208,7 @@
                     `;
                     }
                 } else {
+                    // Produksi role
                     if (isReady) {
                         actions = `<span class="text-xs text-green-600 font-semibold">✅ Siap - ${req.notes || ''}</span>`;
                     } else if (isProblem) {
@@ -3210,12 +3262,16 @@
             return cards;
         }
 
-        window.updateKanbanStatus = function(id, status) {
+        // RESPON KANBAN DARI LOGISTIC
+        window.responseKanban = function(id, status) {
             const req = kanbanRequests.find(k => k.id === id);
             if (req) {
                 req.status = status;
                 saveData();
-                showToast(`✅ Status kanban diubah menjadi ${status}`, 'success');
+                showToast(`✅ Kanban ${req.type} untuk ${req.batchNumber} = ${status}`, 'success');
+
+                // Cek apakah sudah lengkap (WADAH + KEMAS)
+                checkKanbanComplete(req.batchNumber);
                 render();
             }
         };
@@ -3531,12 +3587,12 @@
         setupEvents();
         startAutoRefresh();
         render();
-        showToast('🚀 Dashboard PCT v4 siap digunakan - Data kosong, silahkan tambahkan batch di PPIC', 'info', 4000);
-        console.log('✅ GOF Dashboard v4 - Data kosong siap testing!');
+
+        console.log('✅ ALUR PRODUKSI YANG BENAR:');
+        console.log('PPIC → KANBAN_PRODUKSI (request wadah/kemas) → KANBAN_LOGISTIC (respon) → LOGISTIC → PRODUKSI → QC → QA → DONE');
         console.log('📦 Total Batch:', data.injeksi.length + data.oral.length);
         console.log('📦 Kanban Requests:', kanbanRequests.length);
-        console.log('💡 Tambahkan batch di menu PPIC untuk mulai testing');
-        console.log('📥 Klik tombol "Sample" di PPIC untuk menambahkan data dummy testing');
+        showToast('🚀 Alur: PPIC → Kanban → Logistic → Produksi → QC → QA → Done', 'info', 5000);
     </script>
 
 </body>

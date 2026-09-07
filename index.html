@@ -1298,7 +1298,6 @@
                 qa: { release: null, keterangan: '' },
                 pct: { site: null, incMikro: null, exclMikro: null, onGoing: null, estRilis: null, estPCT: null },
                 keterangan: '',
-                // Tambahan untuk tracking
                 lastUpdated: now,
                 history: [{ action: 'Created', timestamp: now, note: `Batch ${batchNumber} dibuat` }]
             };
@@ -1347,126 +1346,15 @@
         }
 
         // ================================================================
-        //  DEFAULT DATA
+        //  DEFAULT DATA - KOSONG!
         // ================================================================
 
         function getDefaultData() {
-            const oralBatches = [];
-            const oralData = [
-                ['March', 'TTFEF', 'TTFEF61862', 'Rutin', '3/13/2026 17:56:00', '3/14/2026 0:50:00', '0.3', '',
-                    '3/25/2026 16:05:00', '3/25/2026 10:00:00', '11.4',
-                    'Penjadwalan RKHP Terpotong libur idul fitri 18 - 24 Mar 2026', '3/18/2026 10:00:00', '3/24/2026',
-                    '3/25/2026 8:30:00', '3/26/2026 8:30:00', '1.0', '7.9', 'Libur lebaran, pending release',
-                    '3/26/2026 13:11:00', '0.2', '', '12.8', '11.8', ''
-                ],
-                ['March', 'TTFEF', 'TTFEF61863', 'Rutin', '3/16/2026 8:54:00', '3/16/2026 14:09:00', '0.2', '',
-                    '3/26/2026 1:41:00', '3/26/2026 12:00:00', '9.9',
-                    'Penjadwalan RKHP Terpotong libur idul fitri 18 - 24 Mar 2026', '3/18/2026 10:00:00', '3/24/2026',
-                    '3/25/2026 8:30:00', '3/26/2026 8:30:00', '1.0', '7.9', 'Libur lebaran, pending release',
-                    '3/26/2026 15:19:00', '0.1', '', '10.3', '9.3', ''
-                ],
-                ['March', 'TTFEF', 'TTFEF61864', 'Rutin', '3/16/2026 9:05:00', '3/16/2026 14:09:00', '0.2', '',
-                    '3/26/2026 11:00:00', '3/26/2026 14:00:00', '10.0',
-                    'Penjadwalan RKHP Terpotong libur idul fitri 18 - 24 Mar 2026', '3/21/2026 10:00:00', '3/24/2026',
-                    '3/25/2026 8:30:00', '3/26/2026 8:30:00', '1.0', '4.9', '', '3/26/2026 15:21:00', '0.1', '',
-                    '10.3', '9.3', ''
-                ]
-            ];
-
-            for (const row of oralData) {
-                const b = createBatch(row[2], 'oral', 'DONE');
-                b.bulan = row[0];
-                b.kode = row[1];
-                b.logistic.timbang = parseDateMMDDYYYY(row[4]);
-                b.logistic.serahTerima = parseDateMMDDYYYY(row[5]);
-                b.logistic.keterangan = row[7];
-                b.produksi.bpp = parseDateMMDDYYYY(row[8]);
-                b.produksi.kirimDok = parseDateMMDDYYYY(row[9]);
-                b.produksi.keterangan = row[11];
-                b.qc.terimaSample = parseDateMMDDYYYY(row[12]);
-                b.qc.estimasiLWS = parseDateDDMMYYYY(row[13]);
-                b.qc.analisaKimia = parseDateMMDDYYYY(row[14]);
-                b.qc.analisaMikro = parseDateMMDDYYYY(row[15]);
-                b.qc.keterangan = row[17];
-                b.qa.release = parseDateMMDDYYYY(row[18]);
-                b.qa.keterangan = row[20];
-                b.pct.incMikro = parseFloat(row[21]);
-                b.pct.exclMikro = parseFloat(row[22]);
-                b.createdAt = b.logistic.timbang || new Date().toISOString();
-                const subNames = SUB_PROSES.oral;
-                b.subProses = subNames.map((name, i) => {
-                    const start = i === 0 ? b.produksi.bpp : null;
-                    const end = i === subNames.length - 1 ? b.produksi.kirimDok : null;
-                    return { name, status: 'DONE', startTime: start, endTime: end, problem: '' };
-                });
-                b.history = [{ action: 'Completed', timestamp: b.qa.release || new Date().toISOString(), note: 'Batch selesai' }];
-                oralBatches.push(b);
-            }
-
-            const injeksiBatches = [];
-            const injeksiData = [
-                ['Reject', 'VVCND', 'VVCND50113', 'Rutin', '12/26/2025 11:11:00', '12/26/2025 21:45:00', '0.4',
-                    'personil support PQ in op prod, material eksipien digunakan utk in op PQ, menunggu jadwal PQ yg molor',
-                    '1/21/2026 10:11:29', '1/21/2026 13:00:00', '25.6', 'Ini musnah kadar TMS', '12/31/2025 18:30:00',
-                    '1/12/2026', '', '', '', '', '', 'Reject', '', '', '', '', '', '12/28/2025 11:11:00'
-                ],
-                ['January', 'VBXLF', 'VBXLF50145', 'Rutin', '12/27/2025 9:42:00', '12/27/2025 14:30:00', '0.2', '',
-                    '1/5/2026 12:48:00', '', '', 'Problem AHU PQ, terpotong Sabtu-Minggu, Pallet defect etiket',
-                    '12/30/2025 17:09:00', '1/13/2026', '1/13/2026 10:00:00', '', '', '13.7', '', '1/13/2026 14:25:00',
-                    '', '', '17.2', '', '', '12/29/2025 9:42:00'
-                ],
-                ['January', 'VBXLF', 'VBXLF50146', 'Rutin', '12/27/2025 9:48:00', '12/27/2025 14:30:00', '0.2', '',
-                    '1/6/2026 10:19:00', '', '', 'Pallet defect etiket', '12/30/2025 17:09:00', '1/13/2026',
-                    '1/13/2026 10:00:00', '', '', '13.7', '', '1/13/2026 14:23:00', '', '', '17.2', '', '',
-                    '12/29/2025 9:48:00'
-                ]
-            ];
-
-            for (const row of injeksiData) {
-                const status = row[0] === 'Reject' ? 'QC' : 'DONE';
-                const b = createBatch(row[2], 'injeksi', status);
-                b.bulan = row[0];
-                b.kode = row[1];
-                b.logistic.timbang = parseDateMMDDYYYY(row[4]);
-                b.logistic.serahTerima = parseDateMMDDYYYY(row[5]);
-                b.logistic.keterangan = row[7];
-                b.produksi.bpp = parseDateMMDDYYYY(row[8]);
-                b.produksi.kirimDok = parseDateMMDDYYYY(row[9]);
-                b.produksi.keterangan = row[11];
-                b.qc.terimaSample = parseDateMMDDYYYY(row[12]);
-                b.qc.estimasiLWS = parseDateDDMMYYYY(row[13]);
-                b.qc.analisaMikro = parseDateMMDDYYYY(row[14]);
-                b.qc.keterangan = row[16];
-                b.qa.release = parseDateMMDDYYYY(row[17]);
-                b.qa.keterangan = row[19];
-                b.pct.site = parseFloat(row[20]);
-                b.createdAt = b.logistic.timbang || new Date().toISOString();
-                const subNames = SUB_PROSES.injeksi;
-                b.subProses = subNames.map((name, i) => {
-                    const start = i === 0 ? b.produksi.bpp : null;
-                    const end = i === subNames.length - 1 ? b.produksi.kirimDok : null;
-                    return { name, status: status === 'DONE' ? 'DONE' : 'BELUM', startTime: start, endTime: end,
-                        problem: '' };
-                });
-                if (status === 'DONE') {
-                    b.history = [{ action: 'Completed', timestamp: b.qa.release || new Date().toISOString(),
-                        note: 'Batch selesai' }];
-                }
-                injeksiBatches.push(b);
-            }
-
-            return { injeksi: injeksiBatches, oral: oralBatches };
+            return { injeksi: [], oral: [] };
         }
 
         function getDefaultKanban() {
-            return [
-                { id: 1, batchNumber: 'TTFEF61862', varian: 'oral', type: 'WADAH', tanggal: '08-07-2026',
-                    jam: '09:00', status: 'READY', notes: 'Wadah tersedia' },
-                { id: 2, batchNumber: 'TTFEF61863', varian: 'oral', type: 'KEMAS', tanggal: '08-07-2026',
-                    jam: '09:30', status: 'REQUESTED', notes: '' },
-                { id: 3, batchNumber: 'VBXLF50145', varian: 'injeksi', type: 'WADAH', tanggal: '08-07-2026',
-                    jam: '10:00', status: 'READY', notes: '' },
-            ];
+            return [];
         }
 
         // ================================================================
@@ -1840,20 +1728,17 @@
             const onGoingBatches = allBatches.filter(b => b.status !== 'DONE' && b.status !== 'PPIC');
             const ppicBatches = allBatches.filter(b => b.status === 'PPIC');
 
-            // Hitung statistik per stage
             const stageCounts = {};
             for (const s of STAGES) {
                 stageCounts[s] = allBatches.filter(b => b.status === s).length;
             }
 
-            // Hitung rata-rata durasi per stage untuk batch yang selesai
             const stageAvg = {};
             for (const s of ['LOGISTIC', 'PRODUKSI', 'QC', 'QA']) {
                 const durations = doneBatches.map(b => getStageDuration(b, s)).filter(d => d !== null);
                 stageAvg[s] = durations.length > 0 ? durations.reduce((a, b) => a + b, 0) / durations.length : 0;
             }
 
-            // Hitung problem count
             let problemCount = 0;
             for (const b of allBatches) {
                 if (b.logistic?.keterangan) problemCount++;
@@ -1866,6 +1751,9 @@
                     }
                 }
             }
+
+            // Cek apakah ada data
+            const hasData = allBatches.length > 0;
 
             let html = `
             <div class="section-title">📈 Analytics & Performance</div>
@@ -1884,6 +1772,7 @@
               </div>
             </div>
 
+            ${hasData ? `
             <div class="grid-charts mb-4">
               <div class="card">
                 <div class="card-header">
@@ -1979,10 +1868,21 @@
                 </table>
               </div>
             </div>
+            ` : `
+            <div class="card">
+              <div class="empty-state" style="padding:2rem 0;">
+                <div style="font-size:3rem;margin-bottom:1rem;">📭</div>
+                <p style="font-size:1rem;color:#475569;">Belum ada data batch</p>
+                <p class="text-slate-400">Tambahkan batch melalui menu PPIC</p>
+              </div>
+            </div>
+            `}
           `;
 
             el.innerHTML = html;
-            setTimeout(() => renderAnalyticsCharts(stageCounts, stageAvg), 100);
+            if (hasData) {
+                setTimeout(() => renderAnalyticsCharts(stageCounts, stageAvg), 100);
+            }
         }
 
         function renderAnalyticsCharts(stageCounts, stageAvg) {
@@ -1996,25 +1896,28 @@
                 const data = STAGES.map(s => stageCounts[s] || 0);
                 const colors = ['#94a3b8', '#fef9c3', '#dbeafe', '#d1fae5', '#ede9fe', '#bbf7d0'];
 
-                chartStageDist = new Chart(ctx1, {
-                    type: 'doughnut',
-                    data: {
-                        labels: labels,
-                        datasets: [{
-                            data: data,
-                            backgroundColor: colors,
-                            borderColor: 'white',
-                            borderWidth: 2
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                            legend: { position: 'right', labels: { font: { size: 9 }, boxWidth: 10, padding: 6 } }
+                if (data.some(v => v > 0)) {
+                    chartStageDist = new Chart(ctx1, {
+                        type: 'doughnut',
+                        data: {
+                            labels: labels,
+                            datasets: [{
+                                data: data,
+                                backgroundColor: colors,
+                                borderColor: 'white',
+                                borderWidth: 2
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: { position: 'right', labels: { font: { size: 9 }, boxWidth: 10,
+                                        padding: 6 } }
+                            }
                         }
-                    }
-                });
+                    });
+                }
             }
 
             if (ctx2) {
@@ -2024,26 +1927,29 @@
                 const data = labels.map(s => stageAvg[s] || 0);
                 const colors = data.map(v => v > 0 ? '#3b82f6' : '#94a3b8');
 
-                chartTrend = new Chart(ctx2, {
-                    type: 'bar',
-                    data: {
-                        labels: labels.map(s => STAGE_LABELS[s]),
-                        datasets: [{
-                            label: 'Rata-rata Durasi (hari)',
-                            data: data,
-                            backgroundColor: colors,
-                            borderRadius: 4
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: { legend: { display: false } },
-                        scales: {
-                            y: { beginAtZero: true, title: { display: true, text: 'Hari', font: { size: 9 } } }
+                if (data.some(v => v > 0)) {
+                    chartTrend = new Chart(ctx2, {
+                        type: 'bar',
+                        data: {
+                            labels: labels.map(s => STAGE_LABELS[s]),
+                            datasets: [{
+                                label: 'Rata-rata Durasi (hari)',
+                                data: data,
+                                backgroundColor: colors,
+                                borderRadius: 4
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: { legend: { display: false } },
+                            scales: {
+                                y: { beginAtZero: true, title: { display: true, text: 'Hari',
+                                        font: { size: 9 } } }
+                            }
                         }
-                    }
-                });
+                    });
+                }
             }
         }
 
@@ -2073,7 +1979,6 @@
             const oralOk = avgOralInc <= 8.4 || avgOralInc === 0;
             const injeksiOk = avgInjeksi <= 16 || avgInjeksi === 0;
 
-            // Hitung persentase progress untuk on going
             const onGoingWithProgress = onGoing.map(b => {
                 const pct = getPCTOnGoing(b);
                 const target = getTarget(b, 'PCT_ONGOING');
@@ -2083,12 +1988,16 @@
 
             const timelineStages = ['LOGISTIC', 'PRODUKSI', 'QC', 'QA'];
 
+            // Cek apakah ada data
+            const hasData = allBatches.length > 0;
+
             let html = `
             <div class="mb-4">
               <div class="section-title">📊 Dashboard PCT - GOF</div>
-              <div class="section-subtitle">Periode: ${getCurrentDate()} | ${allBatches.length} batch total</div>
+              <div class="section-subtitle">${hasData ? `Periode: ${getCurrentDate()} | ${allBatches.length} batch total` : 'Belum ada data batch'}</div>
             </div>
 
+            ${hasData ? `
             <div class="filter-bar">
               <span class="filter-label">🔍 Ringkasan:</span>
               <span class="filter-badge success">✅ Selesai: <strong>${oralDone.length + injeksiDone.length}</strong></span>
@@ -2329,10 +2238,30 @@
                 }).join('')}
               </div>
             </div>
+            ` : `
+            <div class="card">
+              <div class="empty-state" style="padding:3rem 0;">
+                <div style="font-size:4rem;margin-bottom:1rem;">📭</div>
+                <p style="font-size:1.1rem;color:#475569;">Belum ada data batch</p>
+                <p class="text-slate-400">Mulai dengan menambahkan batch melalui menu <strong>PPIC</strong></p>
+                <button class="btn btn-primary mt-3" onclick="navigateTo('ppic')">➕ Tambah Batch</button>
+              </div>
+            </div>
+            `}
           `;
 
             el.innerHTML = html;
-            setTimeout(() => renderCharts(), 100);
+            if (hasData) {
+                setTimeout(() => renderCharts(), 100);
+            }
+        }
+
+        function navigateTo(page) {
+            currentPage = page;
+            render();
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.page === page);
+            });
         }
 
         // ================================================================
@@ -2343,10 +2272,7 @@
             const ctx1 = document.getElementById('chartTrend');
             const ctx2 = document.getElementById('chartBN');
 
-            if (!ctx1 || !ctx2) {
-                console.warn('Canvas untuk chart tidak ditemukan');
-                return;
-            }
+            if (!ctx1 || !ctx2) return;
 
             const allBatches = [...data.injeksi, ...data.oral];
             const doneBatches = allBatches.filter(b => b.status === 'DONE');
@@ -2356,9 +2282,7 @@
             if (chartBN) { chartBN.destroy();
                 chartBN = null; }
 
-            if (doneBatches.length === 0) {
-                return;
-            }
+            if (doneBatches.length === 0) return;
 
             try {
                 const sorted = [...doneBatches].sort((a, b) =>
@@ -2633,6 +2557,7 @@
               <div class="flex flex-wrap gap-2 items-center mb-3">
                 <input type="text" class="input-text batch-input" placeholder="Batch number..." style="min-width:200px;" />
                 <button class="btn btn-primary btn-add" data-varian="${varian}">➕ Tambah ${label}</button>
+                <button class="btn btn-gray btn-sm" onclick="addSampleData('${varian}')">📥 Sample ${label}</button>
               </div>
               <div class="border-t pt-2">
                 <div class="text-sm font-semibold text-slate-600 mb-1">📋 Daftar Batch ${label}</div>
@@ -2641,6 +2566,30 @@
             </div>
           `;
         }
+
+        // ================================================================
+        //  SAMPLE DATA (untuk testing)
+        // ================================================================
+
+        window.addSampleData = function(varian) {
+            const sampleBatches = {
+                injeksi: ['INJ-001', 'INJ-002', 'INJ-003'],
+                oral: ['ORAL-001', 'ORAL-002']
+            };
+
+            const names = sampleBatches[varian] || [];
+            let added = 0;
+            for (const name of names) {
+                if (!data[varian].some(b => b.batchNumber === name)) {
+                    const newBatch = createBatch(name, varian, 'PPIC');
+                    data[varian].push(newBatch);
+                    added++;
+                }
+            }
+            saveData();
+            showToast(`✅ ${added} sample batch ${varian} ditambahkan`, 'success');
+            render();
+        };
 
         window.deleteBatch = function(varian, batchNumber) {
             if (confirm(`Hapus batch ${batchNumber}?`)) {
@@ -3289,7 +3238,7 @@
         };
 
         // ================================================================
-        //  EVENTS (FIXED - QC → QA + Dropdown Refresh)
+        //  EVENTS
         // ================================================================
 
         function setupEvents() {
@@ -3552,7 +3501,7 @@
         }
 
         // ================================================================
-        //  AUTO REFRESH (optional)
+        //  AUTO REFRESH
         // ================================================================
 
         function startAutoRefresh() {
@@ -3561,7 +3510,7 @@
                 if (currentPage === 'dashboard' || currentPage === 'analytics') {
                     render();
                 }
-            }, 30000); // Refresh setiap 30 detik
+            }, 30000);
         }
 
         // ================================================================
@@ -3582,15 +3531,12 @@
         setupEvents();
         startAutoRefresh();
         render();
-        showToast('🚀 Dashboard PCT v4 siap digunakan!', 'info', 3000);
-        console.log('✅ GOF Dashboard v4 - Dengan Analytics & Notifikasi!');
+        showToast('🚀 Dashboard PCT v4 siap digunakan - Data kosong, silahkan tambahkan batch di PPIC', 'info', 4000);
+        console.log('✅ GOF Dashboard v4 - Data kosong siap testing!');
         console.log('📦 Total Batch:', data.injeksi.length + data.oral.length);
         console.log('📦 Kanban Requests:', kanbanRequests.length);
-        console.log('📋 ORAL:', data.oral.length, 'batch');
-        console.log('💉 INJEKSI:', data.injeksi.length, 'batch');
-        console.log('🎯 Timeline: Hijau=Done, Merah=On Going, Abu=Menunggu');
-        console.log('💡 Hover untuk lihat tooltip problem!');
-        console.log('📈 Halaman Analytics untuk performa detail!');
+        console.log('💡 Tambahkan batch di menu PPIC untuk mulai testing');
+        console.log('📥 Klik tombol "Sample" di PPIC untuk menambahkan data dummy testing');
     </script>
 
 </body>

@@ -142,6 +142,10 @@
         .card-header .badge strong {
             color: #0f172a;
         }
+        .card-header .badge.reschedule {
+            background: #fef3c7;
+            color: #92400e;
+        }
 
         /* ===== BADGES ===== */
         .badge-status {
@@ -186,6 +190,10 @@
         .badge-kanban-problem {
             background: #fecaca;
             color: #991b1b;
+        }
+        .badge-kanban-reschedule {
+            background: #fef3c7;
+            color: #92400e;
         }
         .badge-type {
             padding: 0.1rem 0.5rem;
@@ -658,6 +666,9 @@
             outline: 1px solid #3b82f6;
             border-color: #3b82f6;
         }
+        .input-date.empty {
+            color: #94a3b8;
+        }
         .input-time {
             border: 1px solid #e2e8f0;
             border-radius: 6px;
@@ -668,6 +679,9 @@
         .input-time:focus {
             outline: 1px solid #3b82f6;
             border-color: #3b82f6;
+        }
+        .input-time.empty {
+            color: #94a3b8;
         }
         .input-select {
             border: 1px solid #e2e8f0;
@@ -729,6 +743,13 @@
         .btn-gray:hover {
             background: #64748b;
         }
+        .btn-yellow {
+            background: #eab308;
+            color: white;
+        }
+        .btn-yellow:hover {
+            background: #ca8a04;
+        }
         .btn-sm {
             padding: 0.15rem 0.7rem;
             font-size: 0.6rem;
@@ -789,6 +810,14 @@
             align-items: center;
             justify-content: space-between;
             gap: 0.5rem;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .kanban-card:hover {
+            background: #f1f5f9;
+        }
+        .kanban-card.reschedule {
+            border-left: 4px solid #eab308;
         }
         .kanban-card .kanban-info {
             display: flex;
@@ -821,6 +850,12 @@
         }
         .kanban-card .kanban-notes.ready {
             color: #16a34a;
+        }
+        .kanban-card .kanban-notes.reschedule-note {
+            color: #92400e;
+            background: #fef3c7;
+            padding: 0.1rem 0.5rem;
+            border-radius: 4px;
         }
 
         .request-form {
@@ -977,6 +1012,13 @@
         .hidden {
             display: none;
         }
+        .line-through {
+            text-decoration: line-through;
+            color: #94a3b8;
+        }
+        .text-amber-600 {
+            color: #d97706;
+        }
 
         .stage-detail-grid {
             display: grid;
@@ -1101,6 +1143,60 @@
             }
         }
 
+        /* ===== RESCHEDULE HISTORY POPUP ===== */
+        .reschedule-popup {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: fadeIn 0.2s ease;
+        }
+        .reschedule-popup .popup-content {
+            background: white;
+            border-radius: 16px;
+            padding: 24px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+        .reschedule-popup .popup-content .history-item {
+            padding: 0.75rem;
+            border-bottom: 1px solid #f1f5f9;
+        }
+        .reschedule-popup .popup-content .history-item:last-child {
+            border-bottom: none;
+        }
+        .reschedule-popup .popup-content .history-item .old-value {
+            text-decoration: line-through;
+            color: #94a3b8;
+        }
+        .reschedule-popup .popup-content .history-item .new-value {
+            color: #16a34a;
+            font-weight: 600;
+        }
+        .reschedule-popup .popup-content .history-item .change-label {
+            font-size: 0.6rem;
+            color: #94a3b8;
+            text-transform: uppercase;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+
         @media (max-width: 768px) {
             .sidebar {
                 width: 56px;
@@ -1172,14 +1268,14 @@
 
     <!-- ===== SIDEBAR ===== -->
     <div class="sidebar" id="sidebar">
-        <div class="logo">🏭 PCT<span>v5</span></div>
+        <div class="logo">🏭 PCT<span>v6</span></div>
         <div class="nav-group-label">📊 Monitoring</div>
         <button class="nav-btn active" data-page="dashboard"><span class="icon">📊</span> Dashboard</button>
         <div class="nav-group-label">📋 Planning</div>
         <button class="nav-btn" data-page="ppic"><span class="icon">📋</span> PPIC</button>
         <div class="nav-group-label">🏭 Produksi</div>
         <button class="nav-btn" data-page="produksi"><span class="icon">🏭</span> Proses Produksi</button>
-        <button class="nav-btn" data-page="kanban-produksi"><span class="icon">📦</span> Kanban (Wadah/Kemas)</button>
+        <button class="nav-btn" data-page="kanban-produksi"><span class="icon">📦</span> Kanban (Request)</button>
         <div class="nav-group-label">🚚 Logistic</div>
         <button class="nav-btn" data-page="logistic"><span class="icon">🚚</span> Proses Logistic</button>
         <button class="nav-btn" data-page="kanban-logistic"><span class="icon">📦</span> Kanban (Respon)</button>
@@ -1269,7 +1365,6 @@
                 status,
                 currentStep: 0,
                 createdAt: now,
-                // Status kanban: 'WAITING_WADAH', 'WAITING_KEMAS', 'READY', 'PROBLEM'
                 kanbanStatus: 'WAITING_WADAH',
                 subProses: subNames.map(name => ({ name, status: 'BELUM', startTime: null, endTime: null, problem: '' })),
                 bulan: '',
@@ -1348,7 +1443,7 @@
             const defaultData = getDefaultData();
             try {
                 if (storageOk) {
-                    const saved = localStorage.getItem('pct_data_v5');
+                    const saved = localStorage.getItem('pct_data_v6');
                     if (saved) {
                         const parsed = JSON.parse(saved);
                         if (parsed.injeksi && parsed.oral) {
@@ -1379,7 +1474,7 @@
         function saveData() {
             if (storageOk) {
                 try {
-                    localStorage.setItem('pct_data_v5', JSON.stringify({ ...data, kanban: kanbanRequests }));
+                    localStorage.setItem('pct_data_v6', JSON.stringify({ ...data, kanban: kanbanRequests }));
                 } catch (_) { console.warn('Failed to save data'); }
             }
         }
@@ -1495,7 +1590,8 @@
             const map = {
                 'REQUESTED': 'badge-kanban-request',
                 'READY': 'badge-kanban-ready',
-                'PROBLEM': 'badge-kanban-problem'
+                'PROBLEM': 'badge-kanban-problem',
+                'RESCHEDULED': 'badge-kanban-reschedule'
             };
             return `badge-status ${map[status] || 'badge-kanban-request'}`;
         }
@@ -1504,7 +1600,8 @@
             const map = {
                 'REQUESTED': '🟡 Request',
                 'READY': '🟢 Ready',
-                'PROBLEM': '🔴 Problem'
+                'PROBLEM': '🔴 Problem',
+                'RESCHEDULED': '🔄 Reschedule'
             };
             return map[status] || status;
         }
@@ -1712,7 +1809,7 @@
         }
 
         // ================================================================
-        //  ANALYTICS PAGE
+        //  ANALYTICS PAGE (SINGKAT)
         // ================================================================
 
         function renderAnalytics(el) {
@@ -1732,17 +1829,10 @@
                 stageAvg[s] = durations.length > 0 ? durations.reduce((a, b) => a + b, 0) / durations.length : 0;
             }
 
-            let problemCount = 0;
-            for (const b of allBatches) {
-                if (b.logistic?.keterangan) problemCount++;
-                if (b.produksi?.keterangan) problemCount++;
-                if (b.qc?.keterangan) problemCount++;
-                if (b.qa?.keterangan) problemCount++;
-                if (b.subProses) {
-                    for (const sp of b.subProses) {
-                        if (sp.problem) problemCount++;
-                    }
-                }
+            // Hitung reschedule count
+            let rescheduleCount = 0;
+            for (const req of kanbanRequests) {
+                if (req.history && req.history.length > 1) rescheduleCount++;
             }
 
             const hasData = allBatches.length > 0;
@@ -1758,9 +1848,9 @@
                 <div class="line-sub">✅ Done: ${doneBatches.length} | ⏳ On Going: ${onGoingBatches.length} | 📋 PPIC: ${ppicBatches.length}</div>
               </div>
               <div class="score-card-line">
-                <div class="line-title">⚠️ Issues</div>
-                <div class="line-value" style="color: ${problemCount > 0 ? '#ef4444' : '#22c55e'}">${problemCount}</div>
-                <div class="line-sub">Total problem yang tercatat</div>
+                <div class="line-title">🔄 Reschedule</div>
+                <div class="line-value" style="color: ${rescheduleCount > 0 ? '#eab308' : '#22c55e'}">${rescheduleCount}</div>
+                <div class="line-sub">Total kanban yang direschedule</div>
               </div>
             </div>
 
@@ -1781,83 +1871,6 @@
                 <div class="chart-wrapper">
                   <canvas id="chartStageAvg"></canvas>
                 </div>
-              </div>
-            </div>
-
-            <div class="card mb-4">
-              <div class="card-header">
-                <h3>📋 Detail Statistik per Stage</h3>
-              </div>
-              <div class="table-wrap">
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Stage</th>
-                      <th>Jumlah Batch</th>
-                      <th>Rata-rata Durasi (hari)</th>
-                      <th>Target (hari)</th>
-                      <th>Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    ${['LOGISTIC', 'PRODUKSI', 'QC', 'QA'].map(s => {
-                      const count = stageCounts[s] || 0;
-                      const avg = stageAvg[s] || 0;
-                      const target = s === 'LOGISTIC' ? 0.29 : s === 'PRODUKSI' ? 5 : s === 'QC' ? 5.5 : 0.125;
-                      const isOk = avg <= target || avg === 0;
-                      const statusLabel = count === 0 ? 'N/A' : (isOk ? '✅ On Track' : '⚠️ Perlu Perbaikan');
-                      return `
-                        <tr>
-                          <td><strong>${STAGE_LABELS[s]}</strong></td>
-                          <td>${count}</td>
-                          <td>${avg > 0 ? avg.toFixed(2) : '-'}</td>
-                          <td>${target}</td>
-                          <td><span class="${isOk ? 'text-green-600' : 'text-red-600'} font-bold">${statusLabel}</span></td>
-                        </tr>
-                      `;
-                    }).join('')}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-            <div class="card">
-              <div class="card-header">
-                <h3>🏆 Top 5 Batch Tercepat</h3>
-                <span class="badge">Berdasarkan PCT Include Mikro</span>
-              </div>
-              <div class="table-wrap">
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Batch</th>
-                      <th>Line</th>
-                      <th>PCT Inc (hari)</th>
-                      <th>PCT Excl (hari)</th>
-                      <th>Logistik</th>
-                      <th>Produksi</th>
-                      <th>QC</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    ${doneBatches
-                      .filter(b => getPCTSite(b, true) !== null)
-                      .sort((a, b) => (getPCTSite(a, true) || 999) - (getPCTSite(b, true) || 999))
-                      .slice(0, 5)
-                      .map(b => `
-                        <tr>
-                          <td><strong>${b.batchNumber}</strong></td>
-                          <td><span class="varian-badge ${getVarianBadge(b.varian)}">${getVarianLabel(b.varian)}</span></td>
-                          <td>${getPCTSite(b, true).toFixed(2)}</td>
-                          <td>${(getPCTSite(b, false) || 0).toFixed(2)}</td>
-                          <td>${formatDurationDays(getStageDuration(b, 'LOGISTIC'))}</td>
-                          <td>${formatDurationDays(getStageDuration(b, 'PRODUKSI'))}</td>
-                          <td>${formatDurationDays(getStageDuration(b, 'QC'))}</td>
-                        </tr>
-                      `).join('')}
-                    ${doneBatches.filter(b => getPCTSite(b, true) !== null).length === 0 ? '<tr><td colspan="7" class="text-slate-400">Belum ada data batch selesai</td></tr>' : ''}
-                  </tbody>
-                </table>
               </div>
             </div>
             ` : `
@@ -1946,7 +1959,7 @@
         }
 
         // ================================================================
-        //  DASHBOARD - WITH TIMELINE
+        //  DASHBOARD
         // ================================================================
 
         function renderDashboard(el) {
@@ -2517,7 +2530,6 @@
                 };
             });
 
-            // START PPIC -> KANBAN_PRODUKSI (bukan langsung LOGISTIC!)
             el.querySelectorAll('.btn-start-process').forEach(btn => {
                 btn.onclick = function() {
                     const varian = this.dataset.varian;
@@ -2571,7 +2583,7 @@
         }
 
         // ================================================================
-        //  SAMPLE DATA (untuk testing)
+        //  SAMPLE DATA
         // ================================================================
 
         window.addSampleData = function(varian) {
@@ -2597,6 +2609,8 @@
         window.deleteBatch = function(varian, batchNumber) {
             if (confirm(`Hapus batch ${batchNumber}?`)) {
                 data[varian] = data[varian].filter(b => b.batchNumber !== batchNumber);
+                // Hapus juga kanban request yang terkait
+                kanbanRequests = kanbanRequests.filter(k => k.batchNumber !== batchNumber);
                 saveData();
                 showToast(`🗑️ Batch ${batchNumber} dihapus`, 'warning');
                 render();
@@ -3006,12 +3020,10 @@
         }
 
         // ================================================================
-        //  KANBAN
+        //  KANBAN - PRODUKSI (REQUEST + EDIT + RESCHEDULE)
         // ================================================================
 
-        // KANBAN PRODUKSI - REQUEST WADAH & KEMAS
         function renderKanbanProduksi(el) {
-            // Batch yang bisa request: status KANBAN_PRODUKSI atau KANBAN_LOGISTIC
             const allBatches = [...data.injeksi, ...data.oral];
             const activeBatches = allBatches.filter(b =>
                 b.status === 'KANBAN_PRODUKSI' || b.status === 'KANBAN_LOGISTIC'
@@ -3031,7 +3043,7 @@
               <div class="request-form">
                 <div class="form-group" style="min-width:180px;">
                   <label>Pilih Batch</label>
-                  <select id="kanbanBatchSelect" class="input-select" style="min-width:180px;">
+                  <select id="kanbanBatchSelect" class="input-select" style="min-width:180px;" onchange="onKanbanBatchSelect(this.value)">
                     <option value="">-- Pilih Batch --</option>
                     ${availableBatches.map(b => `<option value="${b.batchNumber}">${b.batchNumber} (${getVarianLabel(b.varian)}) [${b.status}]</option>`).join('')}
                   </select>
@@ -3040,16 +3052,16 @@
                 <div class="form-group">
                   <label>📦 Wadah</label>
                   <div class="form-row">
-                    <input type="text" id="wadahDate" class="input-date" value="${getCurrentDate()}" />
-                    <input type="text" id="wadahTime" class="input-time" value="${getCurrentTime()}" />
+                    <input type="text" id="wadahDate" class="input-date empty" placeholder="DD-MM-YYYY" />
+                    <input type="text" id="wadahTime" class="input-time empty" placeholder="HH:MM" />
                     <button class="btn btn-blue btn-sm" onclick="addKanbanRequest('WADAH')">Request</button>
                   </div>
                 </div>
                 <div class="form-group">
                   <label>📦 Kemas</label>
                   <div class="form-row">
-                    <input type="text" id="kemasDate" class="input-date" value="${getCurrentDate()}" />
-                    <input type="text" id="kemasTime" class="input-time" value="${getCurrentTime()}" />
+                    <input type="text" id="kemasDate" class="input-date empty" placeholder="DD-MM-YYYY" />
+                    <input type="text" id="kemasTime" class="input-time empty" placeholder="HH:MM" />
                     <button class="btn btn-blue btn-sm" onclick="addKanbanRequest('KEMAS')">Request</button>
                   </div>
                 </div>
@@ -3061,7 +3073,37 @@
             </div>
           `;
             el.innerHTML = html;
+
+            // Reset fields when batch selected
+            window.onKanbanBatchSelect = function(value) {
+                if (value) {
+                    const batch = [...data.injeksi, ...data.oral].find(b => b.batchNumber === value);
+                    if (batch) {
+                        // Cek apakah sudah ada request
+                        const hasWadah = kanbanRequests.some(k => k.batchNumber === value && k.type === 'WADAH');
+                        const hasKemas = kanbanRequests.some(k => k.batchNumber === value && k.type === 'KEMAS');
+                        if (hasWadah) {
+                            const req = kanbanRequests.find(k => k.batchNumber === value && k.type === 'WADAH');
+                            if (req && req.status !== 'READY') {
+                                document.getElementById('wadahDate').value = req.tanggal || '';
+                                document.getElementById('wadahTime').value = req.jam || '';
+                            }
+                        }
+                        if (hasKemas) {
+                            const req = kanbanRequests.find(k => k.batchNumber === value && k.type === 'KEMAS');
+                            if (req && req.status !== 'READY') {
+                                document.getElementById('kemasDate').value = req.tanggal || '';
+                                document.getElementById('kemasTime').value = req.jam || '';
+                            }
+                        }
+                    }
+                }
+            };
         }
+
+        // ================================================================
+        //  ADD KANBAN REQUEST - DENGAN RESCHEDULE
+        // ================================================================
 
         window.addKanbanRequest = function(type) {
             const sel = document.getElementById('kanbanBatchSelect');
@@ -3074,16 +3116,16 @@
             const dateInput = type === 'WADAH' ? document.getElementById('wadahDate') : document.getElementById('kemasDate');
             const timeInput = type === 'WADAH' ? document.getElementById('wadahTime') : document.getElementById('kemasTime');
 
-            const tanggal = dateInput.value || getCurrentDate();
-            const jam = timeInput.value || getCurrentTime();
+            let tanggal = dateInput.value || getCurrentDate();
+            let jam = timeInput.value || getCurrentTime();
 
+            // Validasi format
             if (!/^\d{2}-\d{2}-\d{4}$/.test(tanggal)) {
                 showToast('Format tanggal harus DD-MM-YYYY!', 'error');
                 return;
             }
-
-            if (kanbanRequests.some(k => k.batchNumber === batchNumber && k.type === type)) {
-                showToast(`Batch ini sudah pernah request ${type}!`, 'warning');
+            if (!/^\d{2}:\d{2}$/.test(jam)) {
+                showToast('Format jam harus HH:MM!', 'error');
                 return;
             }
 
@@ -3094,12 +3136,43 @@
                 return;
             }
 
-            // Cek apakah batch sudah di status yang tepat
             if (batch.status !== 'KANBAN_PRODUKSI' && batch.status !== 'KANBAN_LOGISTIC') {
                 showToast('Batch harus di status KANBAN_PRODUKSI atau KANBAN_LOGISTIC!', 'warning');
                 return;
             }
 
+            // Cek apakah sudah ada request
+            const existing = kanbanRequests.find(k => k.batchNumber === batchNumber && k.type === type);
+
+            if (existing) {
+                // RESCHEDULE - update data
+                if (existing.status === 'READY') {
+                    showToast(`⚠️ ${type} sudah READY, tidak bisa diubah!`, 'warning');
+                    return;
+                }
+
+                // Simpan history reschedule
+                if (!existing.history) existing.history = [];
+                existing.history.push({
+                    timestamp: new Date().toISOString(),
+                    oldTanggal: existing.tanggal,
+                    oldJam: existing.jam,
+                    newTanggal: tanggal,
+                    newJam: jam,
+                    action: 'RESCHEDULED'
+                });
+
+                existing.tanggal = tanggal;
+                existing.jam = jam;
+                existing.status = 'RESCHEDULED'; // Status diubah jadi RESCHEDULED
+
+                saveData();
+                showToast(`🔄 ${type} untuk ${batchNumber} direschedule!`, 'warning');
+                render();
+                return;
+            }
+
+            // REQUEST BARU
             const newRequest = {
                 id: Date.now() + Math.random() * 1000,
                 batchNumber: batchNumber,
@@ -3108,66 +3181,34 @@
                 tanggal: tanggal,
                 jam: jam,
                 status: 'REQUESTED',
-                notes: ''
+                notes: '',
+                history: [{
+                    timestamp: new Date().toISOString(),
+                    action: 'CREATED',
+                    oldTanggal: null,
+                    oldJam: null,
+                    newTanggal: tanggal,
+                    newJam: jam
+                }]
             };
 
             kanbanRequests.push(newRequest);
             saveData();
             showToast(`✅ Request ${type} untuk ${batchNumber} berhasil`, 'success');
 
-            // Cek apakah sudah lengkap (WADAH + KEMAS)
+            // Reset fields
+            document.getElementById('wadahDate').value = '';
+            document.getElementById('wadahTime').value = '';
+            document.getElementById('kemasDate').value = '';
+            document.getElementById('kemasTime').value = '';
+
             checkKanbanComplete(batchNumber);
             render();
         };
 
-        // Fungsi untuk cek apakah WADAH dan KEMAS sudah ready
-        function checkKanbanComplete(batchNumber) {
-            const hasWadahReady = kanbanRequests.some(k =>
-                k.batchNumber === batchNumber && k.type === 'WADAH' && k.status === 'READY'
-            );
-            const hasKemasReady = kanbanRequests.some(k =>
-                k.batchNumber === batchNumber && k.type === 'KEMAS' && k.status === 'READY'
-            );
-
-            if (hasWadahReady && hasKemasReady) {
-                const allBatches = [...data.injeksi, ...data.oral];
-                const batch = allBatches.find(b => b.batchNumber === batchNumber);
-                if (batch && (batch.status === 'KANBAN_PRODUKSI' || batch.status === 'KANBAN_LOGISTIC')) {
-                    // Pindahkan ke LOGISTIC
-                    batch.status = 'LOGISTIC';
-                    batch.currentStep = 0;
-                    batch.subProses = ['Timbang', 'Serah Terima'].map(name => ({
-                        name,
-                        status: 'BELUM',
-                        startTime: null,
-                        endTime: null,
-                        problem: ''
-                    }));
-                    batch.logistic.timbang = null;
-                    batch.logistic.serahTerima = null;
-                    batch.history.push({ action: 'Kanban Complete', timestamp: new Date().toISOString(),
-                        note: `Wadah dan Kemas ready, pindah ke LOGISTIC` });
-                    saveData();
-                    showToast(`✅ ${batchNumber} - Wadah dan Kemas ready! Pindah ke LOGISTIC`, 'success');
-                    render();
-                }
-            }
-        }
-
-        // KANBAN LOGISTIC - RESPON WADAH & KEMAS
-        function renderKanbanLogistic(el) {
-            let html = `
-            <div class="section-title">📦 Kanban - Respon Wadah/Kemas (Logistic)</div>
-            <div class="section-subtitle">Respon permintaan wadah dan kemas dari produksi</div>
-
-            <div class="card mb-4">
-              <div id="kanbanList">
-                ${renderKanbanList('logistic')}
-              </div>
-            </div>
-          `;
-            el.innerHTML = html;
-        }
+        // ================================================================
+        //  KANBAN LIST - DENGAN RESCHEDULE INDICATOR
+        // ================================================================
 
         function renderKanbanList(role) {
             if (kanbanRequests.length === 0) {
@@ -3176,7 +3217,7 @@
 
             let cards = '';
             const sorted = [...kanbanRequests].sort((a, b) => {
-                const order = { 'REQUESTED': 0, 'PROBLEM': 1, 'READY': 2 };
+                const order = { 'REQUESTED': 0, 'RESCHEDULED': 1, 'PROBLEM': 2, 'READY': 3 };
                 return (order[a.status] || 0) - (order[b.status] || 0);
             });
 
@@ -3184,12 +3225,15 @@
                 const isRequested = req.status === 'REQUESTED';
                 const isReady = req.status === 'READY';
                 const isProblem = req.status === 'PROBLEM';
+                const isRescheduled = req.status === 'RESCHEDULED' || (req.history && req.history.length > 1);
                 const typeLabel = req.type === 'WADAH' ? '📦 Wadah' : '📦 Kemas';
                 const typeBadge = req.type === 'WADAH' ? 'badge-wadah' : 'badge-kemas';
 
                 let actions = '';
+                const canEdit = !isReady;
+
                 if (role === 'logistic') {
-                    if (isRequested) {
+                    if (isRequested || isRescheduled) {
                         actions = `
                       <button class="btn btn-green btn-sm" onclick="responseKanban(${req.id}, 'READY')">✅ Ready</button>
                       <button class="btn btn-red btn-sm" onclick="responseKanban(${req.id}, 'PROBLEM')">⚠️ Problem</button>
@@ -3208,21 +3252,36 @@
                     `;
                     }
                 } else {
-                    // Produksi role
+                    // Produksi role - bisa edit/reschedule
                     if (isReady) {
-                        actions = `<span class="text-xs text-green-600 font-semibold">✅ Siap - ${req.notes || ''}</span>`;
+                        actions = `<span class="text-xs text-green-600 font-semibold">✅ Siap</span>`;
+                    } else if (isRescheduled) {
+                        actions = `
+                      <span class="text-xs text-amber-600 font-semibold">🔄 Reschedule</span>
+                      <button class="btn btn-yellow btn-xs" onclick="editKanban(${req.id})">✏️ Edit</button>
+                    `;
                     } else if (isProblem) {
-                        actions = `<span class="text-xs text-red-600 font-semibold">⚠️ Problem - ${req.notes || ''}</span>`;
+                        actions = `
+                      <span class="text-xs text-red-600 font-semibold">⚠️ Problem</span>
+                      <button class="btn btn-yellow btn-xs" onclick="editKanban(${req.id})">✏️ Edit</button>
+                    `;
                     } else {
-                        actions = `<span class="text-xs text-yellow-600 font-semibold">⏳ Menunggu Respon</span>`;
+                        actions = `
+                      <span class="text-xs text-yellow-600 font-semibold">⏳ Menunggu</span>
+                      <button class="btn btn-yellow btn-xs" onclick="editKanban(${req.id})">✏️ Edit</button>
+                    `;
                     }
                 }
 
                 const statusBadge = getKanbanStatusBadge(req.status);
                 const statusLabel = getKanbanStatusLabel(req.status);
 
+                // Card class
+                let cardClass = 'kanban-card';
+                if (isRescheduled) cardClass += ' reschedule';
+
                 cards += `
-              <div class="kanban-card">
+              <div class="${cardClass}" onclick="${role === 'logistic' && isRescheduled ? `showRescheduleHistory(${req.id})` : ''}">
                 <div class="kanban-info">
                   <div>
                     <span class="label">Batch</span>
@@ -3238,7 +3297,7 @@
                   </div>
                   <div>
                     <span class="label">Tanggal</span>
-                    <div class="value">${req.tanggal}</div>
+                    <div class="value ${isRescheduled ? 'text-amber-600' : ''}">${req.tanggal} ${isRescheduled ? '🔄' : ''}</div>
                   </div>
                   <div>
                     <span class="label">Jam</span>
@@ -3251,10 +3310,11 @@
                 </div>
                 <div class="kanban-actions">
                   ${actions}
-                  ${role === 'logistic' ? `<button class="btn btn-gray btn-xs" onclick="deleteKanban(${req.id})">✕</button>` : ''}
+                  ${role === 'logistic' ? `<button class="btn btn-gray btn-xs" onclick="event.stopPropagation();deleteKanban(${req.id})">✕</button>` : ''}
                 </div>
                 ${req.notes && role === 'logistic' && isReady ? `<div class="kanban-notes ready">📌 ${req.notes}</div>` : ''}
                 ${req.notes && role === 'logistic' && isProblem ? `<div class="kanban-notes">📌 ${req.notes}</div>` : ''}
+                ${isRescheduled && role === 'logistic' ? `<div class="kanban-notes reschedule-note">🔄 Klik untuk lihat riwayat reschedule</div>` : ''}
               </div>
             `;
             }
@@ -3262,15 +3322,140 @@
             return cards;
         }
 
-        // RESPON KANBAN DARI LOGISTIC
+        // ================================================================
+        //  EDIT KANBAN (Produksi)
+        // ================================================================
+
+        window.editKanban = function(id) {
+            const req = kanbanRequests.find(k => k.id === id);
+            if (!req) return;
+            if (req.status === 'READY') {
+                showToast('⚠️ Kanban sudah READY, tidak bisa diedit!', 'warning');
+                return;
+            }
+
+            // Popup edit sederhana
+            const newTanggal = prompt('Ubah tanggal (DD-MM-YYYY):', req.tanggal);
+            if (newTanggal === null) return;
+            if (!/^\d{2}-\d{2}-\d{4}$/.test(newTanggal)) {
+                showToast('Format tanggal harus DD-MM-YYYY!', 'error');
+                return;
+            }
+
+            const newJam = prompt('Ubah jam (HH:MM):', req.jam);
+            if (newJam === null) return;
+            if (!/^\d{2}:\d{2}$/.test(newJam)) {
+                showToast('Format jam harus HH:MM!', 'error');
+                return;
+            }
+
+            // Simpan history
+            if (!req.history) req.history = [];
+            req.history.push({
+                timestamp: new Date().toISOString(),
+                oldTanggal: req.tanggal,
+                oldJam: req.jam,
+                newTanggal: newTanggal,
+                newJam: newJam,
+                action: 'RESCHEDULED'
+            });
+
+            req.tanggal = newTanggal;
+            req.jam = newJam;
+            req.status = 'RESCHEDULED';
+
+            saveData();
+            showToast(`🔄 Kanban ${req.type} untuk ${req.batchNumber} direschedule!`, 'warning');
+            render();
+        };
+
+        // ================================================================
+        //  SHOW RESCHEDULE HISTORY (Popup)
+        // ================================================================
+
+        window.showRescheduleHistory = function(id) {
+            const req = kanbanRequests.find(k => k.id === id);
+            if (!req || !req.history || req.history.length <= 1) {
+                showToast('Tidak ada riwayat reschedule', 'info');
+                return;
+            }
+
+            let historyHtml = '';
+            // Tampilkan dari yang paling lama ke terbaru
+            const histories = [...req.history].reverse();
+            for (const h of histories) {
+                if (h.action === 'CREATED') {
+                    historyHtml += `
+                    <div class="history-item">
+                      <div class="change-label">📝 Permintaan Awal</div>
+                      <div class="text-sm">${h.newTanggal} ${h.newJam}</div>
+                    </div>
+                  `;
+                } else if (h.action === 'RESCHEDULED') {
+                    historyHtml += `
+                    <div class="history-item">
+                      <div class="change-label">🔄 Reschedule</div>
+                      <div class="text-sm">
+                        <span class="old-value">${h.oldTanggal} ${h.oldJam}</span>
+                        → <span class="new-value">${h.newTanggal} ${h.newJam}</span>
+                      </div>
+                      <div class="text-xs text-slate-400">${formatDateTimeDisplay(h.timestamp)}</div>
+                    </div>
+                  `;
+                }
+            }
+
+            const popupHtml = `
+            <div class="reschedule-popup" onclick="if(event.target===this) this.remove()">
+              <div class="popup-content">
+                <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:12px;">
+                  <div>
+                    <h3 style="font-size:1.1rem;font-weight:700;">📦 Riwayat Reschedule</h3>
+                    <div class="text-sm text-slate-500">${req.batchNumber} - ${req.type}</div>
+                  </div>
+                  <button onclick="this.closest('.reschedule-popup').remove()" style="background:none;border:none;font-size:1.5rem;cursor:pointer;color:#94a3b8;">✕</button>
+                </div>
+                <div style="max-height:400px;overflow-y:auto;">
+                  ${historyHtml}
+                </div>
+                <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;border-top:1px solid #e2e8f0;padding-top:12px;">
+                  <div class="text-xs text-slate-400">Status saat ini: ${req.tanggal} ${req.jam} (${req.status})</div>
+                </div>
+              </div>
+            </div>
+          `;
+
+            document.body.insertAdjacentHTML('beforeend', popupHtml);
+        };
+
+        // ================================================================
+        //  KANBAN LOGISTIC - RESPON
+        // ================================================================
+
+        function renderKanbanLogistic(el) {
+            let html = `
+            <div class="section-title">📦 Kanban - Respon Wadah/Kemas (Logistic)</div>
+            <div class="section-subtitle">Respon permintaan wadah dan kemas dari produksi. <span class="text-amber-600">🔄 Yang direschedule akan terlihat jelas</span></div>
+
+            <div class="card mb-4">
+              <div id="kanbanList">
+                ${renderKanbanList('logistic')}
+              </div>
+            </div>
+          `;
+            el.innerHTML = html;
+        }
+
+        // ================================================================
+        //  RESPON KANBAN
+        // ================================================================
+
         window.responseKanban = function(id, status) {
             const req = kanbanRequests.find(k => k.id === id);
             if (req) {
                 req.status = status;
                 saveData();
                 showToast(`✅ Kanban ${req.type} untuk ${req.batchNumber} = ${status}`, 'success');
-
-                // Cek apakah sudah lengkap (WADAH + KEMAS)
                 checkKanbanComplete(req.batchNumber);
                 render();
             }
@@ -3294,10 +3479,47 @@
         };
 
         // ================================================================
+        //  CHECK KANBAN COMPLETE
+        // ================================================================
+
+        function checkKanbanComplete(batchNumber) {
+            const hasWadahReady = kanbanRequests.some(k =>
+                k.batchNumber === batchNumber && k.type === 'WADAH' && k.status === 'READY'
+            );
+            const hasKemasReady = kanbanRequests.some(k =>
+                k.batchNumber === batchNumber && k.type === 'KEMAS' && k.status === 'READY'
+            );
+
+            if (hasWadahReady && hasKemasReady) {
+                const allBatches = [...data.injeksi, ...data.oral];
+                const batch = allBatches.find(b => b.batchNumber === batchNumber);
+                if (batch && (batch.status === 'KANBAN_PRODUKSI' || batch.status === 'KANBAN_LOGISTIC')) {
+                    batch.status = 'LOGISTIC';
+                    batch.currentStep = 0;
+                    batch.subProses = ['Timbang', 'Serah Terima'].map(name => ({
+                        name,
+                        status: 'BELUM',
+                        startTime: null,
+                        endTime: null,
+                        problem: ''
+                    }));
+                    batch.logistic.timbang = null;
+                    batch.logistic.serahTerima = null;
+                    batch.history.push({ action: 'Kanban Complete', timestamp: new Date().toISOString(),
+                        note: `Wadah dan Kemas ready, pindah ke LOGISTIC` });
+                    saveData();
+                    showToast(`✅ ${batchNumber} - Wadah dan Kemas ready! Pindah ke LOGISTIC`, 'success');
+                    render();
+                }
+            }
+        }
+
+        // ================================================================
         //  EVENTS
         // ================================================================
 
         function setupEvents() {
+            // Next button
             document.addEventListener('click', function(e) {
                 const btn = e.target.closest('.btn-next');
                 if (!btn) return;
@@ -3490,6 +3712,7 @@
                 render();
             });
 
+            // Problem input
             document.addEventListener('change', function(e) {
                 const inp = e.target.closest('.input-problem');
                 if (!inp || inp.disabled) return;
@@ -3590,9 +3813,11 @@
 
         console.log('✅ ALUR PRODUKSI YANG BENAR:');
         console.log('PPIC → KANBAN_PRODUKSI (request wadah/kemas) → KANBAN_LOGISTIC (respon) → LOGISTIC → PRODUKSI → QC → QA → DONE');
+        console.log('📦 Fitur Reschedule: Produksi bisa edit kanban yang belum READY');
+        console.log('🔄 Riwayat reschedule bisa dilihat di Kanban Logistic dengan klik card');
         console.log('📦 Total Batch:', data.injeksi.length + data.oral.length);
         console.log('📦 Kanban Requests:', kanbanRequests.length);
-        showToast('🚀 Alur: PPIC → Kanban → Logistic → Produksi → QC → QA → Done', 'info', 5000);
+        showToast('🚀 Fitur: Request Kanban + Reschedule + Riwayat Reschedule!', 'info', 5000);
     </script>
 
 </body>

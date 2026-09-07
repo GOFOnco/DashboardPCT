@@ -810,10 +810,12 @@
             align-items: center;
             justify-content: space-between;
             gap: 0.5rem;
-            cursor: pointer;
             transition: background 0.2s;
         }
-        .kanban-card:hover {
+        .kanban-card.clickable {
+            cursor: pointer;
+        }
+        .kanban-card.clickable:hover {
             background: #f1f5f9;
         }
         .kanban-card.reschedule {
@@ -824,6 +826,7 @@
             flex-wrap: wrap;
             gap: 0.8rem;
             align-items: center;
+            pointer-events: none;
         }
         .kanban-card .kanban-info .label {
             font-size: 0.6rem;
@@ -841,6 +844,11 @@
             flex-wrap: wrap;
             gap: 0.4rem;
             align-items: center;
+        }
+        .kanban-card .kanban-actions .action-btn {
+            cursor: pointer;
+            position: relative;
+            z-index: 5;
         }
         .kanban-card .kanban-notes {
             font-size: 0.65rem;
@@ -979,6 +987,9 @@
         .text-yellow-600 {
             color: #ca8a04;
         }
+        .text-amber-600 {
+            color: #d97706;
+        }
         .font-bold {
             font-weight: 700;
         }
@@ -1015,9 +1026,6 @@
         .line-through {
             text-decoration: line-through;
             color: #94a3b8;
-        }
-        .text-amber-600 {
-            color: #d97706;
         }
 
         .stage-detail-grid {
@@ -1161,7 +1169,7 @@
             background: white;
             border-radius: 16px;
             padding: 24px;
-            max-width: 500px;
+            max-width: 550px;
             width: 90%;
             max-height: 80vh;
             overflow-y: auto;
@@ -1170,6 +1178,7 @@
         .reschedule-popup .popup-content .history-item {
             padding: 0.75rem;
             border-bottom: 1px solid #f1f5f9;
+            position: relative;
         }
         .reschedule-popup .popup-content .history-item:last-child {
             border-bottom: none;
@@ -1186,6 +1195,30 @@
             font-size: 0.6rem;
             color: #94a3b8;
             text-transform: uppercase;
+        }
+        .reschedule-popup .popup-content .history-item .reason-text {
+            font-size: 0.75rem;
+            color: #92400e;
+            background: #fef3c7;
+            padding: 0.15rem 0.5rem;
+            border-radius: 4px;
+            margin-top: 0.2rem;
+            display: inline-block;
+        }
+        .reschedule-popup .popup-content .history-item .badge-reschedule {
+            font-size: 0.55rem;
+            background: #fef3c7;
+            color: #92400e;
+            padding: 0.05rem 0.4rem;
+            border-radius: 999px;
+            font-weight: 600;
+        }
+        .reschedule-popup .popup-content .current-status {
+            background: #f0fdf4;
+            border-radius: 4px;
+            padding: 0.75rem;
+            margin-top: 0.5rem;
+            border: 1px solid #bbf7d0;
         }
 
         @keyframes fadeIn {
@@ -1261,6 +1294,9 @@
                 height: 22px;
                 font-size: 0.45rem;
             }
+            .reschedule-popup .popup-content {
+                padding: 16px;
+            }
         }
     </style>
 </head>
@@ -1268,7 +1304,7 @@
 
     <!-- ===== SIDEBAR ===== -->
     <div class="sidebar" id="sidebar">
-        <div class="logo">🏭 PCT<span>v6</span></div>
+        <div class="logo">🏭 PCT<span>v7</span></div>
         <div class="nav-group-label">📊 Monitoring</div>
         <button class="nav-btn active" data-page="dashboard"><span class="icon">📊</span> Dashboard</button>
         <div class="nav-group-label">📋 Planning</div>
@@ -1307,8 +1343,6 @@
             oral: ['Terima Sample', 'Analisa Kimia', 'Analisa Mikro', 'Release Sample']
         };
 
-        // ALUR PRODUKSI YANG BENAR:
-        // PPIC -> KANBAN_PRODUKSI (request) -> KANBAN_LOGISTIC (respon) -> LOGISTIC -> PRODUKSI -> QC -> QA -> DONE
         const STAGES = ['PPIC', 'KANBAN_PRODUKSI', 'KANBAN_LOGISTIC', 'LOGISTIC', 'PRODUKSI', 'QC', 'QA', 'DONE'];
         const STAGE_LABELS = {
             'PPIC': '📋 PPIC',
@@ -1443,7 +1477,7 @@
             const defaultData = getDefaultData();
             try {
                 if (storageOk) {
-                    const saved = localStorage.getItem('pct_data_v6');
+                    const saved = localStorage.getItem('pct_data_v7');
                     if (saved) {
                         const parsed = JSON.parse(saved);
                         if (parsed.injeksi && parsed.oral) {
@@ -1474,7 +1508,7 @@
         function saveData() {
             if (storageOk) {
                 try {
-                    localStorage.setItem('pct_data_v6', JSON.stringify({ ...data, kanban: kanbanRequests }));
+                    localStorage.setItem('pct_data_v7', JSON.stringify({ ...data, kanban: kanbanRequests }));
                 } catch (_) { console.warn('Failed to save data'); }
             }
         }
@@ -1829,7 +1863,6 @@
                 stageAvg[s] = durations.length > 0 ? durations.reduce((a, b) => a + b, 0) / durations.length : 0;
             }
 
-            // Hitung reschedule count
             let rescheduleCount = 0;
             for (const req of kanbanRequests) {
                 if (req.history && req.history.length > 1) rescheduleCount++;
@@ -2419,7 +2452,6 @@
                 ).join('');
             }
 
-            // Cek status kanban
             let kanbanStatusHtml = '';
             if (batch.status === 'KANBAN_PRODUKSI' || batch.status === 'KANBAN_LOGISTIC') {
                 const hasWadah = kanbanRequests.some(k => k.batchNumber === batch.batchNumber && k.type === 'WADAH' && k
@@ -2609,7 +2641,6 @@
         window.deleteBatch = function(varian, batchNumber) {
             if (confirm(`Hapus batch ${batchNumber}?`)) {
                 data[varian] = data[varian].filter(b => b.batchNumber !== batchNumber);
-                // Hapus juga kanban request yang terkait
                 kanbanRequests = kanbanRequests.filter(k => k.batchNumber !== batchNumber);
                 saveData();
                 showToast(`🗑️ Batch ${batchNumber} dihapus`, 'warning');
@@ -3074,12 +3105,10 @@
           `;
             el.innerHTML = html;
 
-            // Reset fields when batch selected
             window.onKanbanBatchSelect = function(value) {
                 if (value) {
                     const batch = [...data.injeksi, ...data.oral].find(b => b.batchNumber === value);
                     if (batch) {
-                        // Cek apakah sudah ada request
                         const hasWadah = kanbanRequests.some(k => k.batchNumber === value && k.type === 'WADAH');
                         const hasKemas = kanbanRequests.some(k => k.batchNumber === value && k.type === 'KEMAS');
                         if (hasWadah) {
@@ -3102,7 +3131,7 @@
         }
 
         // ================================================================
-        //  ADD KANBAN REQUEST - DENGAN RESCHEDULE
+        //  ADD KANBAN REQUEST - DENGAN RESCHEDULE + ALASAN
         // ================================================================
 
         window.addKanbanRequest = function(type) {
@@ -3119,7 +3148,6 @@
             let tanggal = dateInput.value || getCurrentDate();
             let jam = timeInput.value || getCurrentTime();
 
-            // Validasi format
             if (!/^\d{2}-\d{2}-\d{4}$/.test(tanggal)) {
                 showToast('Format tanggal harus DD-MM-YYYY!', 'error');
                 return;
@@ -3141,17 +3169,17 @@
                 return;
             }
 
-            // Cek apakah sudah ada request
             const existing = kanbanRequests.find(k => k.batchNumber === batchNumber && k.type === type);
 
             if (existing) {
-                // RESCHEDULE - update data
                 if (existing.status === 'READY') {
                     showToast(`⚠️ ${type} sudah READY, tidak bisa diubah!`, 'warning');
                     return;
                 }
 
-                // Simpan history reschedule
+                const alasan = prompt('📝 Alasan reschedule:', '');
+                if (alasan === null) return;
+
                 if (!existing.history) existing.history = [];
                 existing.history.push({
                     timestamp: new Date().toISOString(),
@@ -3159,12 +3187,13 @@
                     oldJam: existing.jam,
                     newTanggal: tanggal,
                     newJam: jam,
+                    alasan: alasan || '-',
                     action: 'RESCHEDULED'
                 });
 
                 existing.tanggal = tanggal;
                 existing.jam = jam;
-                existing.status = 'RESCHEDULED'; // Status diubah jadi RESCHEDULED
+                existing.status = 'RESCHEDULED';
 
                 saveData();
                 showToast(`🔄 ${type} untuk ${batchNumber} direschedule!`, 'warning');
@@ -3188,7 +3217,8 @@
                     oldTanggal: null,
                     oldJam: null,
                     newTanggal: tanggal,
-                    newJam: jam
+                    newJam: jam,
+                    alasan: null
                 }]
             };
 
@@ -3196,7 +3226,6 @@
             saveData();
             showToast(`✅ Request ${type} untuk ${batchNumber} berhasil`, 'success');
 
-            // Reset fields
             document.getElementById('wadahDate').value = '';
             document.getElementById('wadahTime').value = '';
             document.getElementById('kemasDate').value = '';
@@ -3207,7 +3236,7 @@
         };
 
         // ================================================================
-        //  KANBAN LIST - DENGAN RESCHEDULE INDICATOR
+        //  KANBAN LIST - DENGAN RESCHEDULE INDICATOR & FIX CLICK
         // ================================================================
 
         function renderKanbanList(role) {
@@ -3229,21 +3258,24 @@
                 const typeLabel = req.type === 'WADAH' ? '📦 Wadah' : '📦 Kemas';
                 const typeBadge = req.type === 'WADAH' ? 'badge-wadah' : 'badge-kemas';
 
+                // Hanya card dengan reschedule yang bisa diklik untuk lihat history (di Logistic)
+                const isClickable = role === 'logistic' && isRescheduled;
+
                 let actions = '';
-                const canEdit = !isReady;
 
                 if (role === 'logistic') {
+                    // Logistic: tombol action dengan stopPropagation
                     if (isRequested || isRescheduled) {
                         actions = `
-                      <button class="btn btn-green btn-sm" onclick="responseKanban(${req.id}, 'READY')">✅ Ready</button>
-                      <button class="btn btn-red btn-sm" onclick="responseKanban(${req.id}, 'PROBLEM')">⚠️ Problem</button>
-                      <input type="text" class="input-text" id="notes_${req.id}" placeholder="Notes..." value="${req.notes || ''}" style="max-width:150px;font-size:0.7rem;" onchange="updateKanbanNotes(${req.id}, this.value)" />
+                      <button class="btn btn-green btn-sm action-btn" onclick="event.stopPropagation();responseKanban(${req.id}, 'READY')">✅ Ready</button>
+                      <button class="btn btn-red btn-sm action-btn" onclick="event.stopPropagation();responseKanban(${req.id}, 'PROBLEM')">⚠️ Problem</button>
+                      <input type="text" class="input-text" id="notes_${req.id}" placeholder="Notes..." value="${req.notes || ''}" style="max-width:150px;font-size:0.7rem;" onchange="event.stopPropagation();updateKanbanNotes(${req.id}, this.value)" />
                     `;
                     } else if (isProblem) {
                         actions = `
-                      <button class="btn btn-green btn-sm" onclick="responseKanban(${req.id}, 'READY')">✅ Ready</button>
+                      <button class="btn btn-green btn-sm action-btn" onclick="event.stopPropagation();responseKanban(${req.id}, 'READY')">✅ Ready</button>
                       <span class="text-xs text-red-600 font-semibold">⚠️ Problem</span>
-                      <input type="text" class="input-text" id="notes_${req.id}" placeholder="Notes..." value="${req.notes || ''}" style="max-width:150px;font-size:0.7rem;" onchange="updateKanbanNotes(${req.id}, this.value)" />
+                      <input type="text" class="input-text" id="notes_${req.id}" placeholder="Notes..." value="${req.notes || ''}" style="max-width:150px;font-size:0.7rem;" onchange="event.stopPropagation();updateKanbanNotes(${req.id}, this.value)" />
                     `;
                     } else if (isReady) {
                         actions = `
@@ -3252,22 +3284,14 @@
                     `;
                     }
                 } else {
-                    // Produksi role - bisa edit/reschedule
+                    // Produksi: tombol edit TANPA stopPropagation agar tetap berfungsi
                     if (isReady) {
                         actions = `<span class="text-xs text-green-600 font-semibold">✅ Siap</span>`;
-                    } else if (isRescheduled) {
-                        actions = `
-                      <span class="text-xs text-amber-600 font-semibold">🔄 Reschedule</span>
-                      <button class="btn btn-yellow btn-xs" onclick="editKanban(${req.id})">✏️ Edit</button>
-                    `;
-                    } else if (isProblem) {
-                        actions = `
-                      <span class="text-xs text-red-600 font-semibold">⚠️ Problem</span>
-                      <button class="btn btn-yellow btn-xs" onclick="editKanban(${req.id})">✏️ Edit</button>
-                    `;
                     } else {
                         actions = `
-                      <span class="text-xs text-yellow-600 font-semibold">⏳ Menunggu</span>
+                      <span class="text-xs ${isRescheduled ? 'text-amber-600' : 'text-yellow-600'} font-semibold">
+                        ${isRescheduled ? '🔄 Reschedule' : '⏳ Menunggu'}
+                      </span>
                       <button class="btn btn-yellow btn-xs" onclick="editKanban(${req.id})">✏️ Edit</button>
                     `;
                     }
@@ -3276,12 +3300,15 @@
                 const statusBadge = getKanbanStatusBadge(req.status);
                 const statusLabel = getKanbanStatusLabel(req.status);
 
-                // Card class
                 let cardClass = 'kanban-card';
                 if (isRescheduled) cardClass += ' reschedule';
+                if (isClickable) cardClass += ' clickable';
+
+                // Event click hanya untuk card yang clickable
+                const clickAttr = isClickable ? `onclick="showRescheduleHistory(${req.id})"` : '';
 
                 cards += `
-              <div class="${cardClass}" onclick="${role === 'logistic' && isRescheduled ? `showRescheduleHistory(${req.id})` : ''}">
+              <div class="${cardClass}" ${clickAttr}>
                 <div class="kanban-info">
                   <div>
                     <span class="label">Batch</span>
@@ -3310,7 +3337,7 @@
                 </div>
                 <div class="kanban-actions">
                   ${actions}
-                  ${role === 'logistic' ? `<button class="btn btn-gray btn-xs" onclick="event.stopPropagation();deleteKanban(${req.id})">✕</button>` : ''}
+                  ${role === 'logistic' ? `<button class="btn btn-gray btn-xs action-btn" onclick="event.stopPropagation();deleteKanban(${req.id})">✕</button>` : ''}
                 </div>
                 ${req.notes && role === 'logistic' && isReady ? `<div class="kanban-notes ready">📌 ${req.notes}</div>` : ''}
                 ${req.notes && role === 'logistic' && isProblem ? `<div class="kanban-notes">📌 ${req.notes}</div>` : ''}
@@ -3323,7 +3350,7 @@
         }
 
         // ================================================================
-        //  EDIT KANBAN (Produksi)
+        //  EDIT KANBAN (Produksi) - DENGAN ALASAN
         // ================================================================
 
         window.editKanban = function(id) {
@@ -3334,7 +3361,6 @@
                 return;
             }
 
-            // Popup edit sederhana
             const newTanggal = prompt('Ubah tanggal (DD-MM-YYYY):', req.tanggal);
             if (newTanggal === null) return;
             if (!/^\d{2}-\d{2}-\d{4}$/.test(newTanggal)) {
@@ -3349,7 +3375,9 @@
                 return;
             }
 
-            // Simpan history
+            const alasan = prompt('📝 Alasan reschedule:', '');
+            if (alasan === null) return;
+
             if (!req.history) req.history = [];
             req.history.push({
                 timestamp: new Date().toISOString(),
@@ -3357,6 +3385,7 @@
                 oldJam: req.jam,
                 newTanggal: newTanggal,
                 newJam: newJam,
+                alasan: alasan || '-',
                 action: 'RESCHEDULED'
             });
 
@@ -3370,7 +3399,7 @@
         };
 
         // ================================================================
-        //  SHOW RESCHEDULE HISTORY (Popup)
+        //  SHOW RESCHEDULE HISTORY (Popup) - SEMUA PEREVISIAN DICORET
         // ================================================================
 
         window.showRescheduleHistory = function(id) {
@@ -3381,29 +3410,53 @@
             }
 
             let historyHtml = '';
-            // Tampilkan dari yang paling lama ke terbaru
-            const histories = [...req.history].reverse();
-            for (const h of histories) {
+            const histories = [...req.history];
+
+            for (let i = 0; i < histories.length; i++) {
+                const h = histories[i];
+                const isLast = (i === histories.length - 1);
+
                 if (h.action === 'CREATED') {
                     historyHtml += `
                     <div class="history-item">
                       <div class="change-label">📝 Permintaan Awal</div>
-                      <div class="text-sm">${h.newTanggal} ${h.newJam}</div>
+                      <div class="text-sm">
+                        ${h.newTanggal} ${h.newJam}
+                      </div>
                     </div>
                   `;
                 } else if (h.action === 'RESCHEDULED') {
+                    const oldDisplay = `${h.oldTanggal} ${h.oldJam}`;
+                    const newDisplay = `${h.newTanggal} ${h.newJam}`;
+
                     historyHtml += `
                     <div class="history-item">
-                      <div class="change-label">🔄 Reschedule</div>
+                      <div class="change-label">🔄 Reschedule ${i}</div>
                       <div class="text-sm">
-                        <span class="old-value">${h.oldTanggal} ${h.oldJam}</span>
-                        → <span class="new-value">${h.newTanggal} ${h.newJam}</span>
+                        <span class="old-value">${oldDisplay}</span>
+                        → <span class="${isLast ? 'new-value' : 'old-value'}">${newDisplay}</span>
+                        ${isLast ? ' ✅ (Terakhir)' : ''}
                       </div>
+                      ${h.alasan ? `<div class="reason-text">📌 Alasan: ${h.alasan}</div>` : ''}
                       <div class="text-xs text-slate-400">${formatDateTimeDisplay(h.timestamp)}</div>
                     </div>
                   `;
                 }
             }
+
+            const lastHistory = histories[histories.length - 1];
+            const lastDate = lastHistory ? lastHistory.newTanggal : req.tanggal;
+            const lastJam = lastHistory ? lastHistory.newJam : req.jam;
+
+            historyHtml += `
+              <div class="current-status">
+                <div class="text-xs text-slate-500">📌 Status Saat Ini</div>
+                <div class="text-sm font-semibold text-green-600">
+                  ${lastDate} ${lastJam}
+                </div>
+                <div class="text-xs text-slate-400">Status: ${req.status}</div>
+              </div>
+            `;
 
             const popupHtml = `
             <div class="reschedule-popup" onclick="if(event.target===this) this.remove()">
@@ -3412,14 +3465,12 @@
                   <div>
                     <h3 style="font-size:1.1rem;font-weight:700;">📦 Riwayat Reschedule</h3>
                     <div class="text-sm text-slate-500">${req.batchNumber} - ${req.type}</div>
+                    <div class="text-xs text-amber-600 mt-1">🔄 Total ${histories.filter(h => h.action === 'RESCHEDULED').length} kali reschedule</div>
                   </div>
                   <button onclick="this.closest('.reschedule-popup').remove()" style="background:none;border:none;font-size:1.5rem;cursor:pointer;color:#94a3b8;">✕</button>
                 </div>
                 <div style="max-height:400px;overflow-y:auto;">
                   ${historyHtml}
-                </div>
-                <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;border-top:1px solid #e2e8f0;padding-top:12px;">
-                  <div class="text-xs text-slate-400">Status saat ini: ${req.tanggal} ${req.jam} (${req.status})</div>
                 </div>
               </div>
             </div>
@@ -3435,7 +3486,7 @@
         function renderKanbanLogistic(el) {
             let html = `
             <div class="section-title">📦 Kanban - Respon Wadah/Kemas (Logistic)</div>
-            <div class="section-subtitle">Respon permintaan wadah dan kemas dari produksi. <span class="text-amber-600">🔄 Yang direschedule akan terlihat jelas</span></div>
+            <div class="section-subtitle">Respon permintaan wadah dan kemas dari produksi. <span class="text-amber-600">🔄 Yang direschedule bisa diklik untuk lihat riwayat</span></div>
 
             <div class="card mb-4">
               <div id="kanbanList">
@@ -3519,7 +3570,6 @@
         // ================================================================
 
         function setupEvents() {
-            // Next button
             document.addEventListener('click', function(e) {
                 const btn = e.target.closest('.btn-next');
                 if (!btn) return;
@@ -3538,7 +3588,6 @@
                     return;
                 }
 
-                // ===== QA SPECIAL =====
                 if (stage === 'QA') {
                     if (batch.status === 'DONE') {
                         showToast('Batch sudah release!', 'warning');
@@ -3567,7 +3616,6 @@
                     return;
                 }
 
-                // ===== QC SPECIAL =====
                 if (stage === 'QC') {
                     if (!batch.subProses || batch.subProses.length === 0) {
                         const subNames = QC_SUB[batch.varian] || QC_SUB.injeksi;
@@ -3634,7 +3682,6 @@
                     return;
                 }
 
-                // ===== LOGISTIC & PRODUKSI =====
                 if (!batch.subProses || batch.subProses.length === 0) {
                     const subNames = (stage === 'LOGISTIC') ? ['Timbang', 'Serah Terima'] :
                         (SUB_PROSES[batch.varian] || SUB_PROSES.injeksi);
@@ -3712,7 +3759,6 @@
                 render();
             });
 
-            // Problem input
             document.addEventListener('change', function(e) {
                 const inp = e.target.closest('.input-problem');
                 if (!inp || inp.disabled) return;
@@ -3814,10 +3860,13 @@
         console.log('✅ ALUR PRODUKSI YANG BENAR:');
         console.log('PPIC → KANBAN_PRODUKSI (request wadah/kemas) → KANBAN_LOGISTIC (respon) → LOGISTIC → PRODUKSI → QC → QA → DONE');
         console.log('📦 Fitur Reschedule: Produksi bisa edit kanban yang belum READY');
-        console.log('🔄 Riwayat reschedule bisa dilihat di Kanban Logistic dengan klik card');
+        console.log('📝 Setiap reschedule wajib input alasan');
+        console.log('🔄 Riwayat reschedule: semua perubahan sebelumnya dicoret, yang terbaru tetap');
+        console.log('💡 Di Kanban Logistic, tombol action tidak trigger popup reschedule');
+        console.log('✅ Tombol Edit di Kanban Produksi tetap berfungsi normal');
         console.log('📦 Total Batch:', data.injeksi.length + data.oral.length);
         console.log('📦 Kanban Requests:', kanbanRequests.length);
-        showToast('🚀 Fitur: Request Kanban + Reschedule + Riwayat Reschedule!', 'info', 5000);
+        showToast('🚀 Fix: Tombol Edit tetap berfungsi, popup hanya di Logistic!', 'info', 5000);
     </script>
 
 </body>

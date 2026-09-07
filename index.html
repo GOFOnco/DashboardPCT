@@ -272,6 +272,19 @@
             flex-direction: column;
             gap: 0.5rem;
             margin-top: 0.5rem;
+            max-height: 600px;
+            overflow-y: auto;
+        }
+        .timeline-container::-webkit-scrollbar {
+            width: 4px;
+        }
+        .timeline-container::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 4px;
+        }
+        .timeline-container::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
         }
         .timeline-row {
             display: flex;
@@ -434,6 +447,7 @@
             background: #f8fafc;
             position: sticky;
             top: 0;
+            z-index: 5;
         }
         .table-wrap td {
             padding: 0.3rem 0.25rem;
@@ -508,6 +522,16 @@
         .filter-bar .filter-badge strong {
             color: #0f172a;
         }
+        .filter-bar .filter-badge.warning {
+            background: #fef2f2;
+            border-color: #fecaca;
+            color: #dc2626;
+        }
+        .filter-bar .filter-badge.success {
+            background: #f0fdf4;
+            border-color: #bbf7d0;
+            color: #16a34a;
+        }
 
         /* ===== ON GOING ===== */
         .ongoing-grid {
@@ -552,6 +576,28 @@
         }
         .ongoing-card.success {
             border-left-color: #22c55e;
+        }
+        .ongoing-card .progress-bar {
+            width: 100%;
+            height: 4px;
+            background: #e2e8f0;
+            border-radius: 4px;
+            margin-top: 4px;
+            overflow: hidden;
+        }
+        .ongoing-card .progress-bar .fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.3s ease;
+        }
+        .ongoing-card .progress-bar .fill.green {
+            background: #22c55e;
+        }
+        .ongoing-card .progress-bar .fill.yellow {
+            background: #eab308;
+        }
+        .ongoing-card .progress-bar .fill.red {
+            background: #ef4444;
         }
 
         /* ===== CHARTS ===== */
@@ -646,6 +692,7 @@
         }
         .btn:hover {
             opacity: 0.85;
+            transform: scale(0.98);
         }
         .btn-primary {
             background: #0f172a;
@@ -824,6 +871,9 @@
             color: #0f172a;
             box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
         }
+        .tab-btn:hover:not(.active) {
+            background: rgba(255, 255, 255, 0.5);
+        }
 
         .flex-wrap {
             display: flex;
@@ -890,6 +940,9 @@
         }
         .text-green-600 {
             color: #16a34a;
+        }
+        .text-yellow-600 {
+            color: #ca8a04;
         }
         .font-bold {
             font-weight: 700;
@@ -1005,6 +1058,68 @@
             background: #e2e8f0;
         }
 
+        /* ===== TOAST NOTIFICATION ===== */
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 999;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .toast {
+            padding: 12px 20px;
+            border-radius: 10px;
+            color: white;
+            font-size: 0.85rem;
+            font-weight: 500;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            animation: slideIn 0.3s ease;
+            max-width: 400px;
+        }
+        .toast.success {
+            background: #22c55e;
+        }
+        .toast.error {
+            background: #ef4444;
+        }
+        .toast.warning {
+            background: #eab308;
+        }
+        .toast.info {
+            background: #3b82f6;
+        }
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        /* ===== STATS RING ===== */
+        .stats-ring {
+            display: flex;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+        }
+        .stats-ring .ring-item {
+            text-align: center;
+        }
+        .stats-ring .ring-item .ring-value {
+            font-size: 1.2rem;
+            font-weight: 700;
+        }
+        .stats-ring .ring-item .ring-label {
+            font-size: 0.6rem;
+            color: #94a3b8;
+            text-transform: uppercase;
+        }
+
         @media (max-width: 768px) {
             .sidebar {
                 width: 56px;
@@ -1069,6 +1184,12 @@
                 height: 22px;
                 font-size: 0.45rem;
             }
+            .stats-ring {
+                gap: 0.8rem;
+            }
+            .stats-ring .ring-item .ring-value {
+                font-size: 1rem;
+            }
         }
     </style>
 </head>
@@ -1076,7 +1197,7 @@
 
     <!-- ===== SIDEBAR ===== -->
     <div class="sidebar" id="sidebar">
-        <div class="logo">🏭 PCT<span>v3</span></div>
+        <div class="logo">🏭 PCT<span>v4</span></div>
         <div class="nav-group-label">📊 Monitoring</div>
         <button class="nav-btn active" data-page="dashboard"><span class="icon">📊</span> Dashboard</button>
         <div class="nav-group-label">📋 Planning</div>
@@ -1090,7 +1211,12 @@
         <div class="nav-group-label">🔬 Quality</div>
         <button class="nav-btn" data-page="qc"><span class="icon">🔬</span> QC</button>
         <button class="nav-btn" data-page="qa"><span class="icon">📊</span> QA</button>
+        <div class="nav-group-label">📈 Analisis</div>
+        <button class="nav-btn" data-page="analytics"><span class="icon">📈</span> Analytics</button>
     </div>
+
+    <!-- ===== TOAST CONTAINER ===== -->
+    <div class="toast-container" id="toastContainer"></div>
 
     <!-- ===== MAIN ===== -->
     <div class="main" id="mainContent"></div>
@@ -1119,6 +1245,14 @@
             'QA': '📊 QA',
             'DONE': '✅ Done'
         };
+        const STAGE_ICONS = {
+            'PPIC': '📋',
+            'LOGISTIC': '🚚',
+            'PRODUKSI': '🏭',
+            'QC': '🔬',
+            'QA': '📊',
+            'DONE': '✅'
+        };
 
         const TARGETS = {
             oral: { logistik: 0.29, produksi: 5, qc: 5.5, qa: 0.125, pctInc: 8.4, pctExcl: 6.8 },
@@ -1130,8 +1264,10 @@
         let storageOk = false;
         let chartTrend = null;
         let chartBN = null;
+        let chartStageDist = null;
         let currentPage = 'dashboard';
         let selectedBatch = {};
+        let autoRefreshInterval = null;
 
         // ================================================================
         //  STORAGE
@@ -1145,12 +1281,13 @@
 
         function createBatch(batchNumber, varian, status) {
             const subNames = SUB_PROSES[varian] || SUB_PROSES.injeksi;
+            const now = new Date().toISOString();
             return {
                 batchNumber,
                 varian,
                 status,
                 currentStep: 0,
-                createdAt: new Date().toISOString(),
+                createdAt: now,
                 subProses: subNames.map(name => ({ name, status: 'BELUM', startTime: null, endTime: null, problem: '' })),
                 bulan: '',
                 kode: '',
@@ -1160,7 +1297,10 @@
                     keterangan: '' },
                 qa: { release: null, keterangan: '' },
                 pct: { site: null, incMikro: null, exclMikro: null, onGoing: null, estRilis: null, estPCT: null },
-                keterangan: ''
+                keterangan: '',
+                // Tambahan untuk tracking
+                lastUpdated: now,
+                history: [{ action: 'Created', timestamp: now, note: `Batch ${batchNumber} dibuat` }]
             };
         }
 
@@ -1259,6 +1399,7 @@
                     const end = i === subNames.length - 1 ? b.produksi.kirimDok : null;
                     return { name, status: 'DONE', startTime: start, endTime: end, problem: '' };
                 });
+                b.history = [{ action: 'Completed', timestamp: b.qa.release || new Date().toISOString(), note: 'Batch selesai' }];
                 oralBatches.push(b);
             }
 
@@ -1307,6 +1448,10 @@
                     return { name, status: status === 'DONE' ? 'DONE' : 'BELUM', startTime: start, endTime: end,
                         problem: '' };
                 });
+                if (status === 'DONE') {
+                    b.history = [{ action: 'Completed', timestamp: b.qa.release || new Date().toISOString(),
+                        note: 'Batch selesai' }];
+                }
                 injeksiBatches.push(b);
             }
 
@@ -1332,7 +1477,7 @@
             const defaultData = getDefaultData();
             try {
                 if (storageOk) {
-                    const saved = localStorage.getItem('pct_data_v3');
+                    const saved = localStorage.getItem('pct_data_v4');
                     if (saved) {
                         const parsed = JSON.parse(saved);
                         if (parsed.injeksi && parsed.oral) {
@@ -1363,12 +1508,29 @@
         function saveData() {
             if (storageOk) {
                 try {
-                    localStorage.setItem('pct_data_v3', JSON.stringify({ ...data, kanban: kanbanRequests }));
+                    localStorage.setItem('pct_data_v4', JSON.stringify({ ...data, kanban: kanbanRequests }));
                 } catch (_) { console.warn('Failed to save data'); }
             }
         }
 
         loadData();
+
+        // ================================================================
+        //  TOAST NOTIFICATIONS
+        // ================================================================
+
+        function showToast(message, type = 'info', duration = 4000) {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.textContent = message;
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateX(100%)';
+                setTimeout(() => toast.remove(), 300);
+            }, duration);
+        }
 
         // ================================================================
         //  UTILITY
@@ -1608,24 +1770,20 @@
 
         function getStageTooltip(batch, stage) {
             const stageStatus = getStageStatus(batch, stage);
+            let problem = '';
+            if (stage === 'LOGISTIC') problem = batch.logistic?.keterangan || '';
+            else if (stage === 'PRODUKSI') problem = batch.produksi?.keterangan || '';
+            else if (stage === 'QC') problem = batch.qc?.keterangan || '';
+            else if (stage === 'QA') problem = batch.qa?.keterangan || '';
+
+            const dur = getStageDuration(batch, stage);
+            const durStr = dur !== null ? ` (${dur.toFixed(2)} hari)` : '';
+
             if (stageStatus === 'done') {
-                // Cek problem di stage ini
-                let problem = '';
-                if (stage === 'LOGISTIC') problem = batch.logistic?.keterangan || '';
-                else if (stage === 'PRODUKSI') problem = batch.produksi?.keterangan || '';
-                else if (stage === 'QC') problem = batch.qc?.keterangan || '';
-                else if (stage === 'QA') problem = batch.qa?.keterangan || '';
-                if (problem) return `✅ Selesai (⚠️ ${problem})`;
-                return '✅ Selesai';
+                return `✅ Selesai${durStr}${problem ? ` ⚠️ ${problem}` : ''}`;
             }
             if (stageStatus === 'active') {
-                let problem = '';
-                if (stage === 'LOGISTIC') problem = batch.logistic?.keterangan || '';
-                else if (stage === 'PRODUKSI') problem = batch.produksi?.keterangan || '';
-                else if (stage === 'QC') problem = batch.qc?.keterangan || '';
-                else if (stage === 'QA') problem = batch.qa?.keterangan || '';
-                if (problem) return `⏳ On Going (⚠️ ${problem})`;
-                return '⏳ On Going';
+                return `⏳ On Going${durStr}${problem ? ` ⚠️ ${problem}` : ''}`;
             }
             return '⏳ Menunggu';
         }
@@ -1661,12 +1819,232 @@
                 case 'kanban-logistic':
                     renderKanbanLogistic(main);
                     break;
+                case 'analytics':
+                    renderAnalytics(main);
+                    break;
                 default:
                     main.innerHTML = '<div class="card"><p>Halaman tidak ditemukan</p></div>';
             }
             document.querySelectorAll('.nav-btn').forEach(btn => {
                 btn.classList.toggle('active', btn.dataset.page === currentPage);
             });
+        }
+
+        // ================================================================
+        //  ANALYTICS PAGE
+        // ================================================================
+
+        function renderAnalytics(el) {
+            const allBatches = [...data.injeksi, ...data.oral];
+            const doneBatches = allBatches.filter(b => b.status === 'DONE');
+            const onGoingBatches = allBatches.filter(b => b.status !== 'DONE' && b.status !== 'PPIC');
+            const ppicBatches = allBatches.filter(b => b.status === 'PPIC');
+
+            // Hitung statistik per stage
+            const stageCounts = {};
+            for (const s of STAGES) {
+                stageCounts[s] = allBatches.filter(b => b.status === s).length;
+            }
+
+            // Hitung rata-rata durasi per stage untuk batch yang selesai
+            const stageAvg = {};
+            for (const s of ['LOGISTIC', 'PRODUKSI', 'QC', 'QA']) {
+                const durations = doneBatches.map(b => getStageDuration(b, s)).filter(d => d !== null);
+                stageAvg[s] = durations.length > 0 ? durations.reduce((a, b) => a + b, 0) / durations.length : 0;
+            }
+
+            // Hitung problem count
+            let problemCount = 0;
+            for (const b of allBatches) {
+                if (b.logistic?.keterangan) problemCount++;
+                if (b.produksi?.keterangan) problemCount++;
+                if (b.qc?.keterangan) problemCount++;
+                if (b.qa?.keterangan) problemCount++;
+                if (b.subProses) {
+                    for (const sp of b.subProses) {
+                        if (sp.problem) problemCount++;
+                    }
+                }
+            }
+
+            let html = `
+            <div class="section-title">📈 Analytics & Performance</div>
+            <div class="section-subtitle">Analisis mendalam performa PCT</div>
+
+            <div class="score-grid mb-4">
+              <div class="score-card-line">
+                <div class="line-title">📊 Total Batch</div>
+                <div class="line-value">${allBatches.length}</div>
+                <div class="line-sub">✅ Done: ${doneBatches.length} | ⏳ On Going: ${onGoingBatches.length} | 📋 PPIC: ${ppicBatches.length}</div>
+              </div>
+              <div class="score-card-line">
+                <div class="line-title">⚠️ Issues</div>
+                <div class="line-value" style="color: ${problemCount > 0 ? '#ef4444' : '#22c55e'}">${problemCount}</div>
+                <div class="line-sub">Total problem yang tercatat</div>
+              </div>
+            </div>
+
+            <div class="grid-charts mb-4">
+              <div class="card">
+                <div class="card-header">
+                  <h3>📊 Distribusi Status</h3>
+                </div>
+                <div class="chart-wrapper">
+                  <canvas id="chartStageDist"></canvas>
+                </div>
+              </div>
+              <div class="card">
+                <div class="card-header">
+                  <h3>⏱ Rata-rata Durasi per Stage</h3>
+                </div>
+                <div class="chart-wrapper">
+                  <canvas id="chartStageAvg"></canvas>
+                </div>
+              </div>
+            </div>
+
+            <div class="card mb-4">
+              <div class="card-header">
+                <h3>📋 Detail Statistik per Stage</h3>
+              </div>
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Stage</th>
+                      <th>Jumlah Batch</th>
+                      <th>Rata-rata Durasi (hari)</th>
+                      <th>Target (hari)</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${['LOGISTIC', 'PRODUKSI', 'QC', 'QA'].map(s => {
+                      const count = stageCounts[s] || 0;
+                      const avg = stageAvg[s] || 0;
+                      const target = s === 'LOGISTIC' ? 0.29 : s === 'PRODUKSI' ? 5 : s === 'QC' ? 5.5 : 0.125;
+                      const isOk = avg <= target || avg === 0;
+                      const statusLabel = count === 0 ? 'N/A' : (isOk ? '✅ On Track' : '⚠️ Perlu Perbaikan');
+                      return `
+                        <tr>
+                          <td><strong>${STAGE_LABELS[s]}</strong></td>
+                          <td>${count}</td>
+                          <td>${avg > 0 ? avg.toFixed(2) : '-'}</td>
+                          <td>${target}</td>
+                          <td><span class="${isOk ? 'text-green-600' : 'text-red-600'} font-bold">${statusLabel}</span></td>
+                        </tr>
+                      `;
+                    }).join('')}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-header">
+                <h3>🏆 Top 5 Batch Tercepat</h3>
+                <span class="badge">Berdasarkan PCT Include Mikro</span>
+              </div>
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Batch</th>
+                      <th>Line</th>
+                      <th>PCT Inc (hari)</th>
+                      <th>PCT Excl (hari)</th>
+                      <th>Logistik</th>
+                      <th>Produksi</th>
+                      <th>QC</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${doneBatches
+                      .filter(b => getPCTSite(b, true) !== null)
+                      .sort((a, b) => (getPCTSite(a, true) || 999) - (getPCTSite(b, true) || 999))
+                      .slice(0, 5)
+                      .map(b => `
+                        <tr>
+                          <td><strong>${b.batchNumber}</strong></td>
+                          <td><span class="varian-badge ${getVarianBadge(b.varian)}">${getVarianLabel(b.varian)}</span></td>
+                          <td>${getPCTSite(b, true).toFixed(2)}</td>
+                          <td>${(getPCTSite(b, false) || 0).toFixed(2)}</td>
+                          <td>${formatDurationDays(getStageDuration(b, 'LOGISTIC'))}</td>
+                          <td>${formatDurationDays(getStageDuration(b, 'PRODUKSI'))}</td>
+                          <td>${formatDurationDays(getStageDuration(b, 'QC'))}</td>
+                        </tr>
+                      `).join('')}
+                    ${doneBatches.filter(b => getPCTSite(b, true) !== null).length === 0 ? '<tr><td colspan="7" class="text-slate-400">Belum ada data batch selesai</td></tr>' : ''}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          `;
+
+            el.innerHTML = html;
+            setTimeout(() => renderAnalyticsCharts(stageCounts, stageAvg), 100);
+        }
+
+        function renderAnalyticsCharts(stageCounts, stageAvg) {
+            const ctx1 = document.getElementById('chartStageDist');
+            const ctx2 = document.getElementById('chartStageAvg');
+
+            if (ctx1) {
+                if (chartStageDist) { chartStageDist.destroy();
+                    chartStageDist = null; }
+                const labels = STAGES.map(s => STAGE_LABELS[s]);
+                const data = STAGES.map(s => stageCounts[s] || 0);
+                const colors = ['#94a3b8', '#fef9c3', '#dbeafe', '#d1fae5', '#ede9fe', '#bbf7d0'];
+
+                chartStageDist = new Chart(ctx1, {
+                    type: 'doughnut',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            data: data,
+                            backgroundColor: colors,
+                            borderColor: 'white',
+                            borderWidth: 2
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { position: 'right', labels: { font: { size: 9 }, boxWidth: 10, padding: 6 } }
+                        }
+                    }
+                });
+            }
+
+            if (ctx2) {
+                if (chartTrend) { chartTrend.destroy();
+                    chartTrend = null; }
+                const labels = ['LOGISTIC', 'PRODUKSI', 'QC', 'QA'];
+                const data = labels.map(s => stageAvg[s] || 0);
+                const colors = data.map(v => v > 0 ? '#3b82f6' : '#94a3b8');
+
+                chartTrend = new Chart(ctx2, {
+                    type: 'bar',
+                    data: {
+                        labels: labels.map(s => STAGE_LABELS[s]),
+                        datasets: [{
+                            label: 'Rata-rata Durasi (hari)',
+                            data: data,
+                            backgroundColor: colors,
+                            borderRadius: 4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            y: { beginAtZero: true, title: { display: true, text: 'Hari', font: { size: 9 } } }
+                        }
+                    }
+                });
+            }
         }
 
         // ================================================================
@@ -1690,25 +2068,33 @@
             const avgInjeksi = injeksiPCT.length > 0 ? injeksiPCT.reduce((a, b) => a + b, 0) / injeksiPCT.length : 0;
 
             const onGoing = allBatches.filter(b => b.status !== 'DONE' && b.status !== 'PPIC');
+            const ppicBatches = allBatches.filter(b => b.status === 'PPIC');
 
-            const oralOk = avgOralInc <= 8.4;
-            const injeksiOk = avgInjeksi <= 16;
+            const oralOk = avgOralInc <= 8.4 || avgOralInc === 0;
+            const injeksiOk = avgInjeksi <= 16 || avgInjeksi === 0;
 
-            // Timeline stages (tanpa PPIC dan DONE untuk visualisasi)
+            // Hitung persentase progress untuk on going
+            const onGoingWithProgress = onGoing.map(b => {
+                const pct = getPCTOnGoing(b);
+                const target = getTarget(b, 'PCT_ONGOING');
+                const progress = target && pct ? Math.min((pct / target) * 100, 100) : 0;
+                return { ...b, pct, target, progress };
+            });
+
             const timelineStages = ['LOGISTIC', 'PRODUKSI', 'QC', 'QA'];
 
             let html = `
             <div class="mb-4">
               <div class="section-title">📊 Dashboard PCT - GOF</div>
-              <div class="section-subtitle">Periode: 1 Jul 2026 - 31 Jul 2026</div>
+              <div class="section-subtitle">Periode: ${getCurrentDate()} | ${allBatches.length} batch total</div>
             </div>
 
             <div class="filter-bar">
-              <span class="filter-label">🔍 Filter:</span>
-              <span class="filter-value">1 Jul 2026 - 31 Jul 2026</span>
+              <span class="filter-label">🔍 Ringkasan:</span>
+              <span class="filter-badge success">✅ Selesai: <strong>${oralDone.length + injeksiDone.length}</strong></span>
+              <span class="filter-badge warning">⏳ On Going: <strong>${onGoing.length}</strong></span>
+              <span class="filter-badge">📋 PPIC: <strong>${ppicBatches.length}</strong></span>
               <span class="filter-badge">📦 Total: <strong>${allBatches.length}</strong></span>
-              <span class="filter-badge">✅ Selesai: <strong>${oralDone.length + injeksiDone.length}</strong></span>
-              <span class="filter-badge">⏳ On Going: <strong>${onGoing.length}</strong></span>
             </div>
 
             <div class="score-grid mb-4">
@@ -1721,14 +2107,14 @@
                 <div class="line-target">
                   Target PCT Include Mikro: <strong>8.4 hari</strong>
                   <span class="${avgOralInc > 0 ? (avgOralInc <= 8.4 ? 'ok' : 'not-ok') : ''}">
-                    ${avgOralInc > 0 ? (avgOralInc <= 8.4 ? '✅ On Track' : '⚠️ Above Target') : ''}
+                    ${avgOralInc > 0 ? (avgOralInc <= 8.4 ? '✅ On Track' : '⚠️ Above Target') : 'Belum ada data'}
                   </span>
                 </div>
                 <div class="line-target">
                   Target PCT Exclude Mikro: <strong>6.8 hari</strong>
                   <span class="${avgOralExcl > 0 ? (avgOralExcl <= 6.8 ? 'ok' : 'not-ok') : ''}">
                     ${avgOralExcl > 0 ? (avgOralExcl <= 6.8 ? '✅' : '⚠️') : ''}
-                    ${avgOralExcl > 0 ? avgOralExcl.toFixed(1) + ' hari' : ''}
+                    ${avgOralExcl > 0 ? avgOralExcl.toFixed(1) + ' hari' : 'Belum ada data'}
                   </span>
                 </div>
                 <div class="line-sub">${oralDone.length} batch selesai</div>
@@ -1743,7 +2129,7 @@
                 <div class="line-target">
                   Target PCT Site: <strong>16 hari</strong>
                   <span class="${avgInjeksi > 0 ? (avgInjeksi <= 16 ? 'ok' : 'not-ok') : ''}">
-                    ${avgInjeksi > 0 ? (avgInjeksi <= 16 ? '✅ On Track' : '⚠️ Above Target') : ''}
+                    ${avgInjeksi > 0 ? (avgInjeksi <= 16 ? '✅ On Track' : '⚠️ Above Target') : 'Belum ada data'}
                   </span>
                 </div>
                 <div class="line-sub">${injeksiDone.length} batch selesai</div>
@@ -1765,10 +2151,9 @@
                   const varianLabel = getVarianLabel(b.varian);
                   const status = b.status;
                   const isDone = status === 'DONE';
-                  const stageIndex = STAGES.indexOf(status);
                   
                   return `
-                    <div class="timeline-row" onclick="window.location.href='#'" title="Klik untuk detail">
+                    <div class="timeline-row" onclick="showBatchDetail('${b.batchNumber}')" title="Klik untuk detail">
                       <div class="batch-info">
                         ${b.batchNumber}
                         <span class="varian">${varianLabel}</span>
@@ -1783,7 +2168,6 @@
                           else if (stageStatus === 'active') dotClass += ' active';
                           else dotClass += ' pending';
                           
-                          // Cek problem
                           let problem = '';
                           if (stage === 'LOGISTIC') problem = b.logistic?.keterangan || '';
                           else if (stage === 'PRODUKSI') problem = b.produksi?.keterangan || '';
@@ -1912,8 +2296,8 @@
               </div>
               <div class="ongoing-grid">
                 ${onGoing.length === 0 ? '<div class="empty-state">Tidak ada batch yang sedang berjalan</div>' : ''}
-                ${onGoing.map(b => {
-                  const pctOnGoing = getPCTOnGoing(b);
+                ${onGoingWithProgress.map(b => {
+                  const pctOnGoing = b.pct;
                   const statusMap = {
                     'LOGISTIC': '🚚 Logistic',
                     'PRODUKSI': '🏭 Produksi',
@@ -1921,9 +2305,11 @@
                     'QA': '📊 QA'
                   };
                   const statusLabel = statusMap[b.status] || b.status;
-                  const target = getTarget(b, 'PCT_ONGOING');
+                  const target = b.target;
                   const isWarning = pctOnGoing !== null && target !== null && pctOnGoing > target;
                   const cardClass = isWarning ? 'ongoing-card warning' : (pctOnGoing !== null ? 'ongoing-card success' : 'ongoing-card');
+                  const progress = b.progress || 0;
+                  const progressColor = progress < 50 ? 'green' : (progress < 80 ? 'yellow' : 'red');
                   const estRilis = b.pct?.estRilis || formatDateDisplay(new Date(Date.now() + 7 * 24 * 60 * 60 * 1000));
                   return `
                     <div class="${cardClass}">
@@ -1933,7 +2319,10 @@
                       </div>
                       <div style="text-align:right;">
                         <div class="pct">${pctOnGoing !== null ? pctOnGoing.toFixed(2) : '-'} hari</div>
-                        <div class="target">Target Rilis: ${estRilis}</div>
+                        <div class="target">Target: ${target !== null ? target + ' hari' : '-'}</div>
+                      </div>
+                      <div class="progress-bar">
+                        <div class="fill ${progressColor}" style="width: ${Math.min(progress, 100)}%;"></div>
                       </div>
                     </div>
                   `;
@@ -2063,6 +2452,85 @@
         }
 
         // ================================================================
+        //  BATCH DETAIL POPUP
+        // ================================================================
+
+        window.showBatchDetail = function(batchNumber) {
+            const allBatches = [...data.injeksi, ...data.oral];
+            const batch = allBatches.find(b => b.batchNumber === batchNumber);
+            if (!batch) {
+                showToast('Batch tidak ditemukan', 'error');
+                return;
+            }
+
+            const varian = batch.varian;
+            const label = getVarianLabel(varian);
+            const pctInc = getPCTSite(batch, true);
+            const pctExcl = getPCTSite(batch, false);
+            const pctOnGoing = getPCTOnGoing(batch);
+
+            let historyHtml = '';
+            if (batch.history && batch.history.length > 0) {
+                historyHtml = batch.history.map(h =>
+                    `<div class="text-xs text-slate-600">${formatDateTimeDisplay(h.timestamp)} - ${h.action}: ${h.note}</div>`
+                ).join('');
+            }
+
+            let subProsesHtml = '';
+            if (batch.subProses && batch.subProses.length > 0) {
+                subProsesHtml = batch.subProses.map((sp, i) =>
+                    `<div class="flex items-center gap-2 text-sm">
+                        <span class="step-status-badge ${getStepStatusClass(sp.status)}">${getStepStatusLabel(sp.status)}</span>
+                        <span>${i+1}. ${sp.name}</span>
+                        ${sp.problem ? `<span class="text-red-600 text-xs">⚠️ ${sp.problem}</span>` : ''}
+                        ${sp.startTime ? `<span class="text-xs text-slate-400">Start: ${formatDateTimeDisplay(sp.startTime)}</span>` : ''}
+                        ${sp.endTime ? `<span class="text-xs text-slate-400">End: ${formatDateTimeDisplay(sp.endTime)}</span>` : ''}
+                      </div>`
+                ).join('');
+            }
+
+            const detailHtml = `
+            <div style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:999;display:flex;align-items:center;justify-content:center;animation:fadeIn 0.2s ease;" onclick="if(event.target===this) this.remove()">
+              <div style="background:white;border-radius:16px;padding:24px;max-width:600px;width:90%;max-height:80vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.3);">
+                <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:12px;">
+                  <div>
+                    <h2 style="font-size:1.2rem;font-weight:700;">${batch.batchNumber}</h2>
+                    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+                      <span class="varian-badge ${getVarianBadge(varian)}">${label}</span>
+                      <span class="${getStatusBadge(batch.status)}">${getStatusLabel(batch.status)}</span>
+                    </div>
+                  </div>
+                  <button onclick="this.closest('div[style*=\"position:fixed\"]').remove()" style="background:none;border:none;font-size:1.5rem;cursor:pointer;color:#94a3b8;">✕</button>
+                </div>
+
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 0;padding:12px;background:#f8fafc;border-radius:8px;">
+                  <div><span class="text-xs text-slate-500">PCT Inc Mikro</span><div class="font-bold">${pctInc !== null ? pctInc.toFixed(2) + ' hari' : '-'}</div></div>
+                  <div><span class="text-xs text-slate-500">PCT Excl Mikro</span><div class="font-bold">${pctExcl !== null ? pctExcl.toFixed(2) + ' hari' : '-'}</div></div>
+                  <div><span class="text-xs text-slate-500">PCT On Going</span><div class="font-bold">${pctOnGoing !== null ? pctOnGoing.toFixed(2) + ' hari' : '-'}</div></div>
+                  <div><span class="text-xs text-slate-500">Estimasi Rilis</span><div class="font-bold">${batch.pct?.estRilis || '-'}</div></div>
+                </div>
+
+                ${subProsesHtml ? `<div style="margin:12px 0;"><div class="text-xs text-slate-500 font-semibold mb-1">📋 Sub Proses</div>${subProsesHtml}</div>` : ''}
+
+                ${historyHtml ? `<div style="margin:12px 0;border-top:1px solid #e2e8f0;padding-top:12px;"><div class="text-xs text-slate-500 font-semibold mb-1">📜 History</div>${historyHtml}</div>` : ''}
+
+                <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;">
+                  <button onclick="this.closest('div[style*=\"position:fixed\"]').remove()" class="btn btn-gray">Tutup</button>
+                </div>
+              </div>
+            </div>
+            <style>
+              @keyframes fadeIn {
+                from { opacity: 0; }
+                to { opacity: 1; }
+              }
+            </style>
+          `;
+
+            document.body.insertAdjacentHTML('beforeend', detailHtml);
+        };
+
+        // ================================================================
         //  PPIC
         // ================================================================
 
@@ -2103,17 +2571,17 @@
                     const varian = this.dataset.varian;
                     const input = this.closest('.ppic-group').querySelector('.batch-input');
                     const val = input.value.trim();
-                    if (!val) { alert('Masukkan batch number!'); return; }
-                    if (data[varian].some(b => b.batchNumber === val)) { alert('Batch sudah ada!'); return; }
+                    if (!val) { showToast('Masukkan batch number!', 'warning'); return; }
+                    if (data[varian].some(b => b.batchNumber === val)) { showToast('Batch sudah ada!', 'error'); return; }
                     const newBatch = createBatch(val, varian, 'PPIC');
                     data[varian].push(newBatch);
                     saveData();
                     input.value = '';
+                    showToast(`✅ Batch ${val} berhasil ditambahkan`, 'success');
                     render();
                 };
             });
 
-            // Tombol Mulai Proses di PPIC
             el.querySelectorAll('.btn-start-process').forEach(btn => {
                 btn.onclick = function() {
                     const varian = this.dataset.varian;
@@ -2121,10 +2589,9 @@
                     const batch = data[varian].find(b => b.batchNumber === batchNumber);
                     if (!batch) return;
                     if (batch.status !== 'PPIC') {
-                        alert('Batch sudah diproses!');
+                        showToast('Batch sudah diproses!', 'warning');
                         return;
                     }
-                    // Pindah ke LOGISTIC
                     batch.status = 'LOGISTIC';
                     batch.currentStep = 0;
                     batch.subProses = ['Timbang', 'Serah Terima'].map(name => ({
@@ -2136,7 +2603,10 @@
                     }));
                     batch.logistic.timbang = null;
                     batch.logistic.serahTerima = null;
+                    batch.history.push({ action: 'Started', timestamp: new Date().toISOString(),
+                        note: `Batch dipindahkan ke LOGISTIC` });
                     saveData();
+                    showToast(`▶️ Batch ${batchNumber} dimulai`, 'info');
                     render();
                 };
             });
@@ -2153,6 +2623,7 @@
               <div class="flex items-center gap-2">
                 <span class="${getStatusBadge(b.status)}">${getStatusLabel(b.status)}</span>
                 ${isPPIC ? `<button class="btn btn-blue btn-sm btn-start-process" data-varian="${varian}" data-batch="${b.batchNumber}">▶ Mulai</button>` : ''}
+                ${b.status === 'PPIC' ? `<button class="btn btn-red btn-xs" onclick="deleteBatch('${varian}','${b.batchNumber}')">✕</button>` : ''}
               </div>
             </div>`;
             }
@@ -2170,6 +2641,15 @@
             </div>
           `;
         }
+
+        window.deleteBatch = function(varian, batchNumber) {
+            if (confirm(`Hapus batch ${batchNumber}?`)) {
+                data[varian] = data[varian].filter(b => b.batchNumber !== batchNumber);
+                saveData();
+                showToast(`🗑️ Batch ${batchNumber} dihapus`, 'warning');
+                render();
+            }
+        };
 
         // ================================================================
         //  STAGE (LOGISTIC, PRODUKSI, QA)
@@ -2256,7 +2736,6 @@
                     const statusLabel = getStepStatusLabel(st);
                     const statusClass = getStepStatusClass(st);
                     const isDisabled = isDone;
-                    const showNext = isActive && !isDone;
 
                     steps += `
                 <div class="step-box ${cls}">
@@ -2276,7 +2755,7 @@
                              placeholder="Problem..."
                              style="max-width:200px;font-size:0.7rem;"
                              ${isDisabled ? 'disabled' : ''} />
-                      ${showNext ? `<button class="btn btn-blue btn-next" 
+                      ${isActive && !isDone ? `<button class="btn btn-blue btn-next" 
                                   data-stage="${stage}"
                                   data-varian="${varian}" 
                                   data-batch="${batch.batchNumber}" 
@@ -2373,7 +2852,7 @@
         }
 
         // ================================================================
-        //  QC (FIXED - Otomatis Pindah ke QA + Refresh Dropdown)
+        //  QC
         // ================================================================
 
         function renderQC(el) {
@@ -2448,7 +2927,6 @@
                 const statusLabel = getStepStatusLabel(st);
                 const statusClass = getStepStatusClass(st);
                 const isDisabled = isDone;
-                const showNext = isActive && !isDone;
 
                 steps += `
               <div class="step-box ${cls}">
@@ -2468,7 +2946,7 @@
                            placeholder="Problem..."
                            style="max-width:200px;font-size:0.7rem;"
                            ${isDisabled ? 'disabled' : ''} />
-                    ${showNext ? `<button class="btn btn-blue btn-next" 
+                    ${isActive && !isDone ? `<button class="btn btn-blue btn-next" 
                                 data-stage="QC"
                                 data-varian="${varian}" 
                                 data-batch="${batch.batchNumber}" 
@@ -2633,7 +3111,7 @@
             const sel = document.getElementById('kanbanBatchSelect');
             const batchNumber = sel.value;
             if (!batchNumber) {
-                alert('Pilih batch terlebih dahulu!');
+                showToast('Pilih batch terlebih dahulu!', 'warning');
                 return;
             }
 
@@ -2643,21 +3121,20 @@
             const tanggal = dateInput.value || getCurrentDate();
             const jam = timeInput.value || getCurrentTime();
 
-            // Validasi format tanggal DD-MM-YYYY
             if (!/^\d{2}-\d{2}-\d{4}$/.test(tanggal)) {
-                alert('Format tanggal harus DD-MM-YYYY! Contoh: 15-07-2026');
+                showToast('Format tanggal harus DD-MM-YYYY!', 'error');
                 return;
             }
 
             if (kanbanRequests.some(k => k.batchNumber === batchNumber && k.type === type)) {
-                alert(`Batch ini sudah pernah request ${type}!`);
+                showToast(`Batch ini sudah pernah request ${type}!`, 'warning');
                 return;
             }
 
             const allBatches = [...data.injeksi, ...data.oral];
             const batch = allBatches.find(b => b.batchNumber === batchNumber);
             if (!batch) {
-                alert('Batch tidak ditemukan!');
+                showToast('Batch tidak ditemukan!', 'error');
                 return;
             }
 
@@ -2674,6 +3151,7 @@
 
             kanbanRequests.push(newRequest);
             saveData();
+            showToast(`✅ Request ${type} untuk ${batchNumber} berhasil`, 'success');
             render();
         };
 
@@ -2730,7 +3208,6 @@
                     `;
                     }
                 } else {
-                    // Produksi role
                     if (isReady) {
                         actions = `<span class="text-xs text-green-600 font-semibold">✅ Siap - ${req.notes || ''}</span>`;
                     } else if (isProblem) {
@@ -2789,6 +3266,7 @@
             if (req) {
                 req.status = status;
                 saveData();
+                showToast(`✅ Status kanban diubah menjadi ${status}`, 'success');
                 render();
             }
         };
@@ -2805,6 +3283,7 @@
             if (confirm('Hapus permintaan ini?')) {
                 kanbanRequests = kanbanRequests.filter(k => k.id !== id);
                 saveData();
+                showToast('🗑️ Kanban dihapus', 'warning');
                 render();
             }
         };
@@ -2828,18 +3307,18 @@
                     batch = data[varian].find(b => b.batchNumber === batchNumber);
                 }
                 if (!batch) {
-                    alert('Batch tidak ditemukan!');
+                    showToast('Batch tidak ditemukan!', 'error');
                     return;
                 }
 
                 // ===== QA SPECIAL =====
                 if (stage === 'QA') {
                     if (batch.status === 'DONE') {
-                        alert('Batch sudah release!');
+                        showToast('Batch sudah release!', 'warning');
                         return;
                     }
                     if (batch.status !== 'QA') {
-                        alert('Batch belum siap untuk release!');
+                        showToast('Batch belum siap untuk release!', 'warning');
                         return;
                     }
                     batch.qa.release = new Date().toISOString();
@@ -2853,14 +3332,16 @@
                             '' };
                     }
                     batch.currentStep = 0;
+                    batch.history.push({ action: 'Completed', timestamp: batch.qa.release,
+                        note: `Batch ${batchNumber} selesai dan release` });
                     saveData();
+                    showToast(`✅ Batch ${batchNumber} telah release!`, 'success');
                     render();
                     return;
                 }
 
-                // ===== QC SPECIAL (FIXED!) =====
+                // ===== QC SPECIAL =====
                 if (stage === 'QC') {
-                    // Pastikan subProses ada
                     if (!batch.subProses || batch.subProses.length === 0) {
                         const subNames = QC_SUB[batch.varian] || QC_SUB.injeksi;
                         batch.subProses = subNames.map(name => ({ name, status: 'BELUM', startTime: null,
@@ -2869,19 +3350,17 @@
 
                     const step = batch.subProses[stepIndex];
                     if (!step) {
-                        alert('Step tidak ditemukan!');
+                        showToast('Step tidak ditemukan!', 'error');
                         return;
                     }
                     if (step.status === 'DONE') {
-                        alert('Step sudah selesai!');
+                        showToast('Step sudah selesai!', 'warning');
                         return;
                     }
 
-                    // Set end time
                     step.endTime = new Date().toISOString();
                     step.status = 'DONE';
 
-                    // Update GSheet QC fields
                     const stepName = step.name;
                     if (stepName === 'Terima Sample') {
                         batch.qc.terimaSample = step.startTime;
@@ -2895,30 +3374,25 @@
 
                     const nextIdx = stepIndex + 1;
                     if (nextIdx < batch.subProses.length) {
-                        // Masih ada step berikutnya di QC
                         const nextStep = batch.subProses[nextIdx];
                         nextStep.status = 'ON PROGRESS';
                         nextStep.startTime = new Date().toISOString();
                         batch.currentStep = nextIdx;
+                        showToast(`✅ Step ${stepName} selesai, lanjut ke ${nextStep.name}`, 'success');
                     } else {
-                        // SEMUA STEP QC SELESAI → PINDAH KE QA
                         batch.currentStep = 0;
                         batch.status = 'QA';
-
-                        // Reset subProses untuk QA
                         batch.subProses = [{ name: 'Release Finished Good', status: 'BELUM', startTime: null,
                             endTime: null, problem: '' }];
-
-                        // Set qa.release = null (belum release)
                         batch.qa.release = null;
-
-                        // Hapus selected batch dari QC
+                        batch.history.push({ action: 'QC Complete', timestamp: new Date().toISOString(),
+                            note: `Batch ${batchNumber} selesai QC, pindah ke QA` });
                         selectedBatch['QC'] = null;
+                        showToast(`✅ Batch ${batchNumber} selesai QC, pindah ke QA`, 'success');
                     }
 
                     saveData();
 
-                    // Refresh dropdown QC
                     const selQC = document.getElementById('batchSelect_QC');
                     if (selQC) {
                         const allBatches = [...data.injeksi, ...data.oral].filter(b => b.status === 'QC');
@@ -2926,11 +3400,9 @@
                             allBatches.map(b =>
                                 `<option value="${b.batchNumber}">${b.batchNumber} (${getVarianLabel(b.varian)})</option>`
                                 ).join('');
-                        // Kosongkan selection
                         selQC.value = '';
                     }
 
-                    // Refresh tampilan
                     render();
                     return;
                 }
@@ -2945,11 +3417,11 @@
 
                 const step = batch.subProses[stepIndex];
                 if (!step) {
-                    alert('Step tidak ditemukan!');
+                    showToast('Step tidak ditemukan!', 'error');
                     return;
                 }
                 if (step.status === 'DONE') {
-                    alert('Step sudah selesai!');
+                    showToast('Step sudah selesai!', 'warning');
                     return;
                 }
 
@@ -2978,10 +3450,13 @@
                     nextStep.status = 'ON PROGRESS';
                     nextStep.startTime = new Date().toISOString();
                     batch.currentStep = nextIdx;
+                    showToast(`✅ Step ${step.name} selesai, lanjut ke ${nextStep.name}`, 'success');
                 } else {
                     batch.currentStep = 0;
                     const nextStatus = getNextStage(batch.status);
                     batch.status = nextStatus;
+                    batch.history.push({ action: `${stage} Complete`, timestamp: new Date().toISOString(),
+                        note: `Batch ${batchNumber} pindah ke ${nextStatus}` });
 
                     if (nextStatus === 'PRODUKSI') {
                         const subNames = SUB_PROSES[batch.varian] || SUB_PROSES.injeksi;
@@ -2995,6 +3470,7 @@
                         batch.subProses = [{ name: 'Release Finished Good', status: 'BELUM', startTime: null,
                             endTime: null, problem: '' }];
                     }
+                    showToast(`✅ Batch ${batchNumber} pindah ke ${nextStatus}`, 'success');
                 }
 
                 saveData();
@@ -3009,7 +3485,6 @@
                 render();
             });
 
-            // FIXED: Gunakan event 'change' untuk mencegah terlalu sensitif
             document.addEventListener('change', function(e) {
                 const inp = e.target.closest('.input-problem');
                 if (!inp || inp.disabled) return;
@@ -3043,6 +3518,8 @@
 
                 if (inp.value.trim().length > 0 && step.status !== 'DONE') {
                     step.status = 'PROBLEM';
+                    batch.history.push({ action: 'Problem', timestamp: new Date().toISOString(),
+                        note: `Problem pada ${step.name}: ${inp.value}` });
                 } else if (inp.value.trim().length === 0 && step.status === 'PROBLEM') {
                     step.status = 'ON PROGRESS';
                 }
@@ -3075,6 +3552,19 @@
         }
 
         // ================================================================
+        //  AUTO REFRESH (optional)
+        // ================================================================
+
+        function startAutoRefresh() {
+            if (autoRefreshInterval) clearInterval(autoRefreshInterval);
+            autoRefreshInterval = setInterval(() => {
+                if (currentPage === 'dashboard' || currentPage === 'analytics') {
+                    render();
+                }
+            }, 30000); // Refresh setiap 30 detik
+        }
+
+        // ================================================================
         //  NAVIGATION
         // ================================================================
 
@@ -3090,14 +3580,17 @@
         // ================================================================
 
         setupEvents();
+        startAutoRefresh();
         render();
-        console.log('✅ GOF Dashboard v3 - Dengan Timeline Visual!');
+        showToast('🚀 Dashboard PCT v4 siap digunakan!', 'info', 3000);
+        console.log('✅ GOF Dashboard v4 - Dengan Analytics & Notifikasi!');
         console.log('📦 Total Batch:', data.injeksi.length + data.oral.length);
         console.log('📦 Kanban Requests:', kanbanRequests.length);
         console.log('📋 ORAL:', data.oral.length, 'batch');
         console.log('💉 INJEKSI:', data.injeksi.length, 'batch');
         console.log('🎯 Timeline: Hijau=Done, Merah=On Going, Abu=Menunggu');
         console.log('💡 Hover untuk lihat tooltip problem!');
+        console.log('📈 Halaman Analytics untuk performa detail!');
     </script>
 
 </body>
